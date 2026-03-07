@@ -90,6 +90,15 @@
     }).filter(c => c !== null);
   }
 
+  function getAvatarUrl(url: string) {
+    // Extract user from https://github.com/user/repo
+    const parts = url.replace('https://github.com/', '').split('/');
+    if (parts.length > 0) {
+      return `https://github.com/${parts[0]}.png?size=100`;
+    }
+    return '';
+  }
+
   onMount(() => {
     fetchRepos();
     const ws = new WebSocket('ws://localhost:8080/ws');
@@ -138,20 +147,29 @@
           </div>
 
           <div class="card-header">
-            <div>
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
-                <h3 class="repo-name" style="margin: 0;">{repo.name}</h3>
-                {#if repo.status === 'synced'}
-                  <span class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); font-size: 0.6rem; padding: 2px 8px;">SYNCED</span>
-                {/if}
+            <div style="display: flex; gap: 16px; align-items: flex-start;">
+              <img src={getAvatarUrl(repo.url)} alt="" style="width: 44px; height: 44px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-border);" />
+              <div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                  <h3 class="repo-name" style="margin: 0;">{repo.name}</h3>
+                  {#if repo.status === 'synced'}
+                    <span class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); font-size: 0.6rem; padding: 2px 8px;">SYNCED</span>
+                  {/if}
+                </div>
+                <div class="repo-url">{repo.url.replace('https://github.com/', '')}</div>
               </div>
-              <div class="repo-url">{repo.url.replace('https://github.com/', '')}</div>
             </div>
           </div>
 
           <div class="stats-row">
-            <div class="stat-item"><b>{repo.stars}</b> stars</div>
-            <div class="stat-item"><b>{repo.open_issues}</b> issues</div>
+            <div class="stat-item" data-tooltip="GitHub Stars">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--status-yellow)" style="opacity: 0.8;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              <b>{repo.stars}</b>
+            </div>
+            <div class="stat-item" data-tooltip="Open Issues">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <b>{repo.open_issues}</b>
+            </div>
           </div>
 
           <div class="mini-chart">
@@ -180,6 +198,7 @@
                   style="stroke-dasharray: 75; stroke-dashoffset: {75 - (repo.progress || 0) * 0.75}" />
               </svg>
             </div>
+            <img src={getAvatarUrl(repo.url)} alt="" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--glass-border);" />
             <div>
               <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="font-weight: 700; font-size: 1.1rem;">{repo.name}</div>
@@ -191,6 +210,10 @@
             </div>
           </div>
           <div style="display: flex; gap: 40px; align-items: center;">
+            <div class="stat-item">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--status-yellow)"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              <b>{repo.stars}</b>
+            </div>
             <div class="stat-item"><b>{repo.health_score}</b> Health</div>
             <div class="badge" style="color: {repo.status === 'synced' ? 'var(--status-green)' : '#fff'}">{repo.status}</div>
           </div>
