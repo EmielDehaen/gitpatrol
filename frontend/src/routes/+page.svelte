@@ -45,20 +45,18 @@
     if (res.ok) {
       let text = await res.text();
       
-      const parts = repo.url.replace('https://github.com/', '').split('/');
-      if (parts.length >= 2) {
-        const user = parts[0];
-        const repoName = parts[1].replace('.git', '');
-        const branch = repo.default_branch || 'main';
-        const rawBase = `https://raw.githubusercontent.com/${user}/${repoName}/${branch}/`;
-        
-        // Robust asset mapping
-        text = text.replace(/!\[([^\]]*)\]\((?!(?:http|https|ftp|data:))(?:\.\/)?([^)]+)\)/gi, `![$1](${rawBase}$2)`);
-        text = text.replace(/<img[^>]+src=["'](?!(?:http|https|ftp|data:))(?:\.\/)?([^"']+)["'][^>]*>/gi, (match) => {
-          return match.replace(/src=["'](?:\.\/)?([^"']+)["']/i, (srcMatch, path) => `src="${rawBase}${path}"`);
-        });
-        text = text.replace(/\[([^\]]*)\]\((?!(?:http|https|ftp|#))(?:\.\/)?([^)]+)\)/gi, `[$1](${rawBase}$2)`);
-      }
+      const assetBase = `${API_URL}/api/repositories/${repo.id}/assets/`;
+      
+      // Fix image paths in Markdown: ![alt](path)
+      text = text.replace(/!\[([^\]]*)\]\((?!(?:http|https|ftp|data:))(?:\.\/)?([^)]+)\)/gi, `![$1](${assetBase}$2)`);
+      
+      // Fix image paths in HTML: <img src="path">
+      text = text.replace(/<img[^>]+src=["'](?!(?:http|https|ftp|data:))(?:\.\/)?([^"']+)["'][^>]*>/gi, (match) => {
+        return match.replace(/src=["'](?:\.\/)?([^"']+)["']/i, (srcMatch, path) => `src="${assetBase}${path}"`);
+      });
+
+      // Fix link paths in Markdown: [text](path)
+      text = text.replace(/\[([^\]]*)\]\((?!(?:http|https|ftp|#))(?:\.\/)?([^)]+)\)/gi, `[$1](${assetBase}$2)`);
 
       readmeContent = await marked.parse(text, { gfm: true, breaks: true });
     } else {

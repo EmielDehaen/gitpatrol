@@ -27,6 +27,16 @@ func main() {
 	e.GET("/api/repositories/:id/readme", getReadme)
 	e.Static("/avatars", "./data/avatars")
 
+	// Dynamic static assets from repositories
+	e.GET("/api/repositories/:id/assets/*", func(c echo.Context) error {
+		id := c.Param("id")
+		var name string
+		db.QueryRow("SELECT name FROM repositories WHERE id = ?", id).Scan(&name)
+		
+		filePath := c.Param("*")
+		return c.File(filepath.Join("./data", name, filePath))
+	})
+
 	// Scheduler
 	go func() {
 		for {
