@@ -47,7 +47,7 @@
   }
 
   async function deleteRepo(id: number) {
-    if (!confirm('Are you sure?')) return;
+    if (!confirm('Are you sure you want to terminate this patrol?')) return;
     const res = await fetch(`${API_URL}/api/repositories/${id}`, { method: 'DELETE' });
     if (res.ok) { selectedRepo = null; fetchRepos(); }
   }
@@ -175,27 +175,29 @@
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="margin: 0; font-size: 2rem;">{selectedRepo.name}</h2>
+          <div>
+            <h2 style="margin: 0; font-size: 2.2rem; font-weight: 800;">{selectedRepo.name}</h2>
+            <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-family: monospace; font-size: 0.9rem;">{selectedRepo.url}</p>
+          </div>
           <button class="secondary" onclick={() => selectedRepo = null}>CLOSE</button>
         </div>
       </div>
-      <div class="modal-body" style="padding: 40px; overflow-y: auto;">
-        <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.7rem; margin-bottom: 24px;">Recent Mission Logs</h4>
+      <div class="modal-body">
+        <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.75rem; font-weight: 800; margin-bottom: 24px;">Recent Mission Logs</h4>
         <div style="display: flex; flex-direction: column; gap: 12px;">
           {#each parseCommits(selectedRepo.last_commit) as commit}
-            <div class="list-item" style="cursor: default; padding: 16px; background: rgba(255,255,255,0.02);">
-              <div style="flex: 1;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
-                  <span class="branch-badge">{commit.branch}</span>
-                  <span style="font-weight: 600;">{commit.message}</span>
-                </div>
-                <div style="font-size: 0.75rem; color: var(--efinity-text-muted);">{commit.author} • {commit.date} • <span style="color: var(--efinity-blue);">{commit.hash.substring(0,7)}</span></div>
+            <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <span class="branch-badge">{commit.branch}</span>
+                <span style="font-weight: 600; font-size: 1rem;">{commit.message}</span>
               </div>
+              <div style="font-size: 0.8rem; color: var(--efinity-text-muted); font-weight: 500;">{commit.author} • {commit.date} • <span style="color: var(--efinity-blue); font-family: monospace;">{commit.hash.substring(0,7)}</span></div>
             </div>
           {/each}
         </div>
-        <div style="margin-top: 40px; border-top: 1px solid var(--glass-border); padding-top: 32px;">
-          <button style="width: 100%; background: rgba(255,77,77,0.1); color: var(--status-red); border: 1px solid rgba(255,77,77,0.2);" onclick={() => deleteRepo(selectedRepo!.id)}>TERMINATE PATROL</button>
+        <div style="margin-top: 48px; border-top: 1px solid var(--glass-border); padding-top: 32px;">
+          <h4 style="color: var(--status-red); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em; margin-bottom: 16px; font-weight: 800;">Danger Zone</h4>
+          <button style="width: 100%; background: rgba(255,77,77,0.05); color: var(--status-red); border: 1px solid rgba(255,77,77,0.15); box-shadow: none;" onclick={() => deleteRepo(selectedRepo!.id)}>TERMINATE PATROL</button>
         </div>
       </div>
     </div>
@@ -204,14 +206,20 @@
 
 {#if showAddModal}
   <div class="modal-overlay" onclick={() => showAddModal = false}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()} style="max-width: 500px;">
-      <div class="modal-header"><h2>New Patrol</h2></div>
-      <div class="modal-body" style="padding: 40px;">
-        <label>Name</label><input bind:value={newName} />
-        <label>URL</label><input bind:value={newUrl} />
-        <label>Interval (Min)</label><input type="number" bind:value={interval} />
-        <div style="display: flex; gap: 12px; margin-top: 20px;">
-          <button style="flex: 2;" onclick={addRepo}>DEPLOY</button>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()} style="max-width: 540px;">
+      <div class="modal-header">
+        <h2 style="margin: 0; font-size: 1.8rem; font-weight: 800;">Deploy New Patrol</h2>
+        <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-size: 0.9rem;">Configure a new asset for monitoring.</p>
+      </div>
+      <div class="modal-body">
+        <label>DISPLAY NAME</label>
+        <input bind:value={newName} placeholder="e.g. efinity-frontend" />
+        <label>REPOSITORY URL</label>
+        <input bind:value={newUrl} placeholder="https://github.com/..." />
+        <label>SYNC INTERVAL (MINUTES)</label>
+        <input type="number" bind:value={interval} />
+        <div style="display: flex; gap: 16px; margin-top: 12px;">
+          <button style="flex: 2;" onclick={addRepo}>ACTIVATE</button>
           <button class="secondary" style="flex: 1;" onclick={() => showAddModal = false}>CANCEL</button>
         </div>
       </div>
