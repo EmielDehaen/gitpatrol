@@ -63,8 +63,9 @@ func getCommitHistory(repoPath string) string {
 }
 
 func getLastCommits(repoPath string) string {
-	// Get last 10 commits from all branches: hash|author|date|message
-	cmd := exec.Command("git", "--git-dir="+repoPath, "log", "--all", "-10", "--format=%H|%an|%cr|%s")
+	// Get last 10 commits from all branches: hash|author|date|message|branch
+	// %D shows ref names (branch/tag)
+	cmd := exec.Command("git", "--git-dir="+repoPath, "log", "--all", "-10", "--format=%H|%an|%cr|%s|%D")
 	output, _ := cmd.CombinedOutput()
 	return string(output)
 }
