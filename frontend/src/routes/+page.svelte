@@ -16,6 +16,7 @@
     open_issues: number;
     commit_history: string;
     health_score: number;
+    default_branch: string;
     progress?: number;
   }
 
@@ -37,30 +38,30 @@
     repositories = await res.json();
   }
 
-  async function fetchReadme(id: number) {
-    if (!selectedRepo) return;
+  async function fetchReadme(repo: Repository) {
     readmeContent = 'Loading mission briefing...';
     readmeExpanded = false;
-    const res = await fetch(`${API_URL}/api/repositories/${id}/readme`);
+    const res = await fetch(`${API_URL}/api/repositories/${repo.id}/readme`);
     if (res.ok) {
-      const text = await res.text();
-      // Extract user/repo from URL
-      const parts = selectedRepo.url.replace('https://github.com/', '').split('/');
-      const baseUrl = `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/main/`;
+      let text = await res.text();
       
-      // Use marked with base URL for assets
-      readmeContent = await marked.parse(text, {
-        baseUrl: baseUrl,
-        gfm: true,
-        breaks: true
-      });
+      // Manually replace relative paths with absolute GitHub raw URLs
+      const parts = repo.url.replace('https://github.com/', '').split('/');
+      const rawBase = `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/${repo.default_branch}/`;
+      
+      // Fix image paths: ![alt](path)
+      text = text.replace(/!\[([^\]]*)\]\((?!http|https|ftp)([^)]+)\)/g, `![$1](${rawBase}$2)`);
+      // Fix link paths: [text](path)
+      text = text.replace(/\[([^\]]*)\]\((?!http|https|ftp|#)([^)]+)\)/g, `[$1](${rawBase}$2)`);
+
+      readmeContent = await marked.parse(text, { gfm: true, breaks: true });
     } else {
       readmeContent = '<p style="color: var(--efinity-text-muted)">No mission briefing available for this asset.</p>';
     }
   }
 
   $effect(() => {
-    if (selectedRepo) fetchReadme(selectedRepo.id);
+    if (selectedRepo) fetchReadme(selectedRepo);
   });
 
   async function addRepo() {
@@ -304,15 +305,15 @@
         </div>
       </div>
       <div class="modal-body">
-        <div class="readme-container" class:readme-expanded={readmeExpanded} style="max-height: {readmeExpanded ? '2000px' : '3000px'};">
-          <div style="max-height: {readmeExpanded ? 'none' : '200px'}; overflow: hidden;">
+        <div class="readme-container" class:readme-expanded={readmeExpanded}>
+          <div style="max-height: {readmeExpanded ? 'none' : '300px'}; overflow: hidden;">
             <div class="readme-content">
               {@html readmeContent}
             </div>
           </div>
           {#if !readmeExpanded}
             <div class="readme-fade">
-              <button class="secondary" style="font-size: 0.65rem; padding: 8px 16px;" onclick={() => readmeExpanded = true}>READ FULL BRIEFING</button>
+              <button class="secondary" style="font-size: 0.65rem; padding: 12px 24px;" onclick={() => readmeExpanded = true}>READ FULL MISSION BRIEFING</button>
             </div>
           {/if}
         </div>

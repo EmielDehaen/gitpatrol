@@ -204,16 +204,15 @@ h1 {
   position: relative;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--glass-border);
-  border-radius: 20px;
+  border-radius: 24px;
   overflow: hidden;
-  transition: max-height 0.5s ease;
 }
 
 .readme-content {
-  padding: 32px;
+  padding: 40px;
   color: #ccc;
-  font-size: 0.95rem;
-  line-height: 1.6;
+  font-size: 1rem;
+  line-height: 1.7;
 }
 
 .readme-content h1, .readme-content h2 { color: #fff; margin-top: 0; }

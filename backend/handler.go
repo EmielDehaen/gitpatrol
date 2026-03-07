@@ -71,6 +71,7 @@ type Repository struct {
 	OpenIssues      int    `json:"open_issues"`
 	CommitHistory   string `json:"commit_history"`
 	HealthScore     int    `json:"health_score"`
+	DefaultBranch   string `json:"default_branch"`
 }
 
 func getRepositories(c echo.Context) error {
@@ -86,6 +87,14 @@ func getRepositories(c echo.Context) error {
 		var lastSync sql.NullString
 		rows.Scan(&r.ID, &r.Name, &r.URL, &r.IntervalMinutes, &lastSync, &r.Status, &r.LastCommit, &r.ErrorMessage, &r.Stars, &r.Forks, &r.OpenIssues, &r.CommitHistory, &r.HealthScore)
 		r.LastSync = lastSync.String
+		
+		// Get default branch name from git
+		repoPath := filepath.Join("./data", r.Name)
+		cmd := exec.Command("git", "-C", repoPath, "rev-parse", "--abbrev-ref", "HEAD")
+		out, _ := cmd.CombinedOutput()
+		r.DefaultBranch = strings.TrimSpace(string(out))
+		if r.DefaultBranch == "" { r.DefaultBranch = "main" }
+
 		repos = append(repos, r)
 	}
 	return c.JSON(http.StatusOK, repos)
