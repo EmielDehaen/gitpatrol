@@ -80,8 +80,8 @@ func syncRepo(id int, url, name string) {
 			return
 		}
 	} else {
-		// Normal fetch --all to get all branches
-		cmd := exec.Command("git", "-C", repoPath, "fetch", "--all")
+		// Professional archive fetch: all branches, tags, and prune deleted ones
+		cmd := exec.Command("git", "-C", repoPath, "fetch", "--all", "--prune", "--tags", "--force")
 		if err := cmd.Run(); err != nil {
 			updateStatus(id, "error", err.Error())
 			return
