@@ -49,10 +49,14 @@
       const parts = repo.url.replace('https://github.com/', '').split('/');
       const rawBase = `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/${repo.default_branch}/`;
       
-      // Fix image paths: ![alt](path)
-      text = text.replace(/!\[([^\]]*)\]\((?!http|https|ftp)([^)]+)\)/g, `![$1](${rawBase}$2)`);
+      // Fix image paths in Markdown: ![alt](path)
+      text = text.replace(/!\[([^\]]*)\]\((?!http|https|ftp)(?:\.\/)?([^)]+)\)/g, `![$1](${rawBase}$2)`);
+      // Fix image paths in HTML: <img src="path">
+      text = text.replace(/<img[^>]+src=["'](?!(?:http|https|ftp))(?:\.\/)?([^"']+)["'][^>]*>/g, (match, path) => {
+        return match.replace(path, rawBase + path);
+      });
       // Fix link paths: [text](path)
-      text = text.replace(/\[([^\]]*)\]\((?!http|https|ftp|#)([^)]+)\)/g, `[$1](${rawBase}$2)`);
+      text = text.replace(/\[([^\]]*)\]\((?!http|https|ftp|#)(?:\.\/)?([^)]+)\)/g, `[$1](${rawBase}$2)`);
 
       readmeContent = await marked.parse(text, { gfm: true, breaks: true });
     } else {
