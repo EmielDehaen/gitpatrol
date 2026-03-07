@@ -141,3 +141,8 @@ func syncRepo(id int, url, name string) {
 	
 	broadcastStatus(id, "synced", "")
 }
+
+func updateStatus(id int, status, errMsg string) {
+	db.Exec("UPDATE repositories SET status = ?, error_message = ? WHERE id = ?", status, errMsg, id)
+	broadcastStatus(id, status, errMsg)
+}
