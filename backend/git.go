@@ -52,7 +52,7 @@ func getCommitHistory(repoPath string) string {
 		start := day.Format("2006-01-02 00:00:00")
 		end := day.Format("2006-01-02 23:59:59")
 		
-		cmd := exec.Command("git", "--git-dir="+repoPath, "rev-list", "--count", "--since=\""+start+"\"", "--until=\""+end+"\"", "HEAD")
+		cmd := exec.Command("git", "--git-dir="+repoPath, "rev-list", "--count", "--all", "--since=\""+start+"\"", "--until=\""+end+"\"")
 		output, _ := cmd.CombinedOutput()
 		var count int
 		fmt.Sscanf(string(output), "%d", &count)
@@ -63,8 +63,8 @@ func getCommitHistory(repoPath string) string {
 }
 
 func getLastCommits(repoPath string) string {
-	// Get last 10 commits: hash|author|date|message
-	cmd := exec.Command("git", "--git-dir="+repoPath, "log", "-10", "--format=%H|%an|%cr|%s")
+	// Get last 10 commits from all branches: hash|author|date|message
+	cmd := exec.Command("git", "--git-dir="+repoPath, "log", "--all", "-10", "--format=%H|%an|%cr|%s")
 	output, _ := cmd.CombinedOutput()
 	return string(output)
 }
