@@ -19,7 +19,6 @@ type GitHubMeta struct {
 }
 
 func fetchGitHubMeta(url string) (GitHubMeta, error) {
-	// Extract "user/repo" from "https://github.com/user/repo"
 	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
 	if len(parts) < 2 {
 		return GitHubMeta{}, fmt.Errorf("invalid URL")
@@ -41,85 +40,6 @@ func fetchGitHubMeta(url string) (GitHubMeta, error) {
 	body, _ := io.ReadAll(resp.Body)
 	json.Unmarshal(body, &meta)
 	return meta, nil
-}
-
-func getCommitHistory(repoPath string) string {
-	// Get counts per day for last 14 days
-	history := make([]int, 14)
-	now := time.Now()
-	for i := 0; i < 14; i++ {
-		day := now.AddDate(0, 0, -i)
-		start := day.Format("2006-01-02 00:00:00")
-		end := day.Format("2006-01-02 23:59:59")
-		
-		cmd := exec.Command("git", "--git-dir="+repoPath, "rev-list", "--count", "--all", "--since=\""+start+"\"", "--until=\""+end+"\"")
-		output, _ := cmd.CombinedOutput()
-		var count int
-		fmt.Sscanf(string(output), "%d", &count)
-		history[13-i] = count
-	}
-	res, _ := json.Marshal(history)
-	return string(res)
-}
-
-func getLastCommits(repoPath string) string {
-	// Get last 10 commits from all branches
-	cmd := exec.Command("git", "--git-dir="+repoPath, "log", "--all", "-10", "--format=%H|%an|%cr|%s|%d")
-	output, _ := cmd.CombinedOutput()
-	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	
-	var results []string
-	for _, line := range lines {
-		parts := strings.Split(line, "|")
-		if len(parts) < 5 { continue }
-		
-		refs := strings.TrimSpace(parts[4])
-		// If no direct ref, find which branch it belongs to
-		if refs == "" || refs == "()" {
-			hash := parts[0]
-			// for-each-ref is more reliable in mirror/bare repos
-			branchCmd := exec.Command("git", "--git-dir="+repoPath, "for-each-ref", "--format=%(refname:short)", "--contains", hash, "refs/heads", "refs/remotes")
-			branchOut, _ := branchCmd.CombinedOutput()
-			bLines := strings.Split(strings.TrimSpace(string(branchOut)), "\n")
-			
-			if len(bLines) > 0 && bLines[0] != "" {
-				// Take the first branch, clean it up
-				branch := bLines[0]
-				branch = strings.TrimPrefix(branch, "origin/")
-				parts[4] = "(" + branch + ")"
-			}
-		}
-		results = append(results, strings.Join(parts, "|"))
-	}
-	
-	return strings.Join(results, "\n")
-}
-
-func calculateHealthScore(meta GitHubMeta, historyStr string, lastCommitDate time.Time) int {
-	score := 50 // Base score
-	
-	// Activity bonus
-	var history []int
-	json.Unmarshal([]byte(historyStr), &history)
-	activeDays := 0
-	for _, count := range history {
-		if count > 0 { activeDays++ }
-	}
-	score += activeDays * 3
-
-	// Stagnation penalty
-	daysSinceLast := int(time.Since(lastCommitDate).Hours() / 24)
-	if daysSinceLast > 30 { score -= 10 }
-	if daysSinceLast > 90 { score -= 20 }
-	if daysSinceLast > 365 { score -= 30 }
-
-	// Popularity bonus
-	if meta.StargazersCount > 1000 { score += 5 }
-	if meta.StargazersCount > 10000 { score += 5 }
-
-	if score < 0 { score = 0 }
-	if score > 100 { score = 100 }
-	return score
 }
 
 func downloadAvatar(url string, username string) error {
@@ -145,7 +65,6 @@ func downloadAvatar(url string, username string) error {
 func syncRepo(id int, url, name string) {
 	updateStatus(id, "syncing", "")
 	
-	// Extract username for avatar
 	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
 	username := ""
 	if len(parts) >= 2 {
@@ -154,23 +73,22 @@ func syncRepo(id int, url, name string) {
 
 	repoPath := filepath.Join("./data", name)
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		cmd := exec.Command("git", "clone", "--mirror", url, repoPath)
+		// Normal clone
+		cmd := exec.Command("git", "clone", url, repoPath)
 		if err := cmd.Run(); err != nil {
 			updateStatus(id, "error", err.Error())
 			return
 		}
 	} else {
-		cmd := exec.Command("git", "--git-dir="+repoPath, "fetch", "-p", "origin")
+		// Normal fetch --all to get all branches
+		cmd := exec.Command("git", "-C", repoPath, "fetch", "--all")
 		if err := cmd.Run(); err != nil {
 			updateStatus(id, "error", err.Error())
 			return
 		}
 	}
 
-	// Enrich with GitHub Meta
 	meta, _ := fetchGitHubMeta(url)
-	
-	// Download avatar locally
 	if username != "" {
 		avatarURL := fmt.Sprintf("https://github.com/%s.png?size=100", username)
 		downloadAvatar(avatarURL, username)
@@ -179,8 +97,7 @@ func syncRepo(id int, url, name string) {
 	history := getCommitHistory(repoPath)
 	lastCommits := getLastCommits(repoPath)
 	
-	// Get last commit time for health score
-	cmd := exec.Command("git", "--git-dir="+repoPath, "log", "-1", "--format=%cI")
+	cmd := exec.Command("git", "-C", repoPath, "log", "-1", "--format=%cI")
 	output, _ := cmd.CombinedOutput()
 	lastCommitTime, _ := time.Parse(time.RFC3339, strings.TrimSpace(string(output)))
 	
@@ -200,6 +117,76 @@ func syncRepo(id int, url, name string) {
 		time.Now(), lastCommits, meta.StargazersCount, meta.ForksCount, meta.OpenIssuesCount, history, score, id)
 	
 	broadcastStatus(id, "synced", "")
+}
+
+func getCommitHistory(repoPath string) string {
+	history := make([]int, 14)
+	now := time.Now()
+	for i := 0; i < 14; i++ {
+		day := now.AddDate(0, 0, -i)
+		start := day.Format("2006-01-02 00:00:00")
+		end := day.Format("2006-01-02 23:59:59")
+		
+		cmd := exec.Command("git", "-C", repoPath, "rev-list", "--count", "--all", "--since=\""+start+"\"", "--until=\""+end+"\"")
+		output, _ := cmd.CombinedOutput()
+		var count int
+		fmt.Sscanf(string(output), "%d", &count)
+		history[13-i] = count
+	}
+	res, _ := json.Marshal(history)
+	return string(res)
+}
+
+func getLastCommits(repoPath string) string {
+	cmd := exec.Command("git", "-C", repoPath, "log", "--all", "-10", "--format=%H|%an|%cr|%s|%d")
+	output, _ := cmd.CombinedOutput()
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	
+	var results []string
+	for _, line := range lines {
+		parts := strings.Split(line, "|")
+		if len(parts) < 5 { continue }
+		
+		refs := strings.TrimSpace(parts[4])
+		if refs == "" || refs == "()" {
+			hash := parts[0]
+			// More reliable branch check in normal clones
+			branchCmd := exec.Command("git", "-C", repoPath, "branch", "-a", "--contains", hash)
+			branchOut, _ := branchCmd.CombinedOutput()
+			bLines := strings.Split(strings.TrimSpace(string(branchOut)), "\n")
+			
+			if len(bLines) > 0 {
+				for _, b := range bLines {
+					b = strings.TrimSpace(strings.TrimPrefix(b, "*"))
+					if !strings.Contains(b, "HEAD") && b != "" {
+						branch := strings.TrimPrefix(b, "remotes/origin/")
+						parts[4] = "(" + branch + ")"
+						break
+					}
+				}
+			}
+		}
+		results = append(results, strings.Join(parts, "|"))
+	}
+	return strings.Join(results, "\n")
+}
+
+func calculateHealthScore(meta GitHubMeta, historyStr string, lastCommitDate time.Time) int {
+	score := 50
+	var history []int
+	json.Unmarshal([]byte(historyStr), &history)
+	activeDays := 0
+	for _, count := range history { if count > 0 { activeDays++ } }
+	score += activeDays * 3
+	daysSinceLast := int(time.Since(lastCommitDate).Hours() / 24)
+	if daysSinceLast > 30 { score -= 10 }
+	if daysSinceLast > 90 { score -= 20 }
+	if daysSinceLast > 365 { score -= 30 }
+	if meta.StargazersCount > 1000 { score += 5 }
+	if meta.StargazersCount > 10000 { score += 5 }
+	if score < 0 { score = 0 }
+	if score > 100 { score = 100 }
+	return score
 }
 
 func updateStatus(id int, status, errMsg string) {
