@@ -80,12 +80,27 @@
     return lastCommit.trim().split('\n').map(line => {
       const parts = line.split('|');
       if (parts.length < 4) return null;
+      
+      const refs = parts[4] || '';
+      // Extract branch from something like "(HEAD -> main, origin/main)"
+      let branch = 'unknown';
+      if (refs) {
+        // Clean parentheses and split refs
+        const cleanRefs = refs.replace(/[()]/g, '').split(', ');
+        // Find first ref that isn't HEAD, origin/HEAD or tag:
+        const priorityRef = cleanRefs.find(r => 
+          !r.includes('HEAD') && !r.startsWith('tag:')
+        ) || cleanRefs[0];
+        
+        branch = priorityRef?.split(' -> ').pop()?.replace('origin/', '') || 'main';
+      }
+
       return { 
         hash: parts[0], 
         author: parts[1], 
         date: parts[2], 
         message: parts[3],
-        branch: parts[4]?.replace('HEAD -> ', '').split(',')[0].trim() || 'main'
+        branch: branch
       };
     }).filter(c => c !== null);
   }
