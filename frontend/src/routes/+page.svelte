@@ -125,14 +125,14 @@
       {#each repositories as repo (repo.id)}
         <div class="card" onclick={() => selectedRepo = repo}>
           <div style="position: absolute; top: 32px; right: 32px; display: flex; align-items: center; gap: 16px;">
-            <div class="radial-timer" title={getRemainingTime(repo)}>
+            <div class="radial-timer" data-tooltip={getRemainingTime(repo)}>
               <svg width="40" height="40">
                 <circle cx="20" cy="20" r="16" />
                 <circle cx="20" cy="20" r="16" class="progress" class:active-pulse={repo.status !== 'syncing'}
                   style="stroke-dasharray: 100; stroke-dashoffset: {100 - (repo.progress || 0)}" />
               </svg>
             </div>
-            <div class="health-score" style="color: {repo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}44">
+            <div class="health-score" data-tooltip="Tactical Health Score" style="color: {repo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}44">
               {repo.health_score}
             </div>
           </div>
