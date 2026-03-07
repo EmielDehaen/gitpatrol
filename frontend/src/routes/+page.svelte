@@ -137,10 +137,16 @@
           <div class="stat-item"><b>{repo.open_issues}</b> issues</div>
         </div>
 
-        <div class="mini-chart">
-          {#each getHistoryArray(repo.commit_history) as count}
-            <div class="chart-bar" style="height: {Math.max(10, Math.min(100, (count / 10) * 100))}%; opacity: {count > 0 ? 0.8 : 0.2}"></div>
-          {/each}
+        <div style="margin-top: 32px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label style="margin: 0; font-size: 0.6rem;">14-Day Activity</label>
+            <span style="font-size: 0.6rem; color: var(--efinity-text-muted);">Today</span>
+          </div>
+          <div class="mini-chart">
+            {#each getHistoryArray(repo.commit_history) as count}
+              <div class="chart-bar" style="height: {Math.max(10, Math.min(100, (count / 10) * 100))}%; opacity: {count > 0 ? 0.8 : 0.1}" title="{count} commits"></div>
+            {/each}
+          </div>
         </div>
 
         <div class="info-row">
