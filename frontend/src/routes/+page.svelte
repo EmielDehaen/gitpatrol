@@ -157,11 +157,10 @@
           <div class="mini-chart">
             {#each JSON.parse(repo.commit_history || '[]') as count}
               <div class="chart-bar" 
-                style="height: {Math.max(10, Math.min(100, (count / 10) * 100))}%; 
-                       opacity: {0.1 + (Math.min(count, 10) / 10) * 0.9};
-                       background: {count > 0 ? 'var(--efinity-blue)' : 'rgba(255,255,255,0.1)'};
-                       box-shadow: {count > 5 ? '0 0 10px var(--efinity-blue-glow)' : 'none'};
-                       filter: brightness({1 + (Math.min(count, 10) / 10) * 0.5});"
+                style="height: {count === 0 ? '4px' : Math.min(100, (count / 10) * 100)}%; 
+                       background: {count === 0 ? 'rgba(255,255,255,0.05)' : `rgba(0, 112, 243, ${0.3 + (Math.min(count, 10) / 10) * 0.7})`};
+                       box-shadow: {count > 5 ? `0 0 12px rgba(0, 112, 243, ${(Math.min(count, 10) / 10) * 0.4})` : 'none'};
+                       border-bottom: {count === 0 ? '1px solid rgba(255,255,255,0.1)' : 'none'};"
                 data-tooltip="{count} commits">
               </div>
             {/each}
