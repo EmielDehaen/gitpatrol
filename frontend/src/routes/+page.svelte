@@ -17,6 +17,7 @@
     commit_history: string;
     health_score: number;
     default_branch: string;
+    auto_patrol: number;
     progress?: number;
   }
 
@@ -29,6 +30,7 @@
   let newName = $state('');
   let newUrl = $state('');
   let interval = $state(60);
+  let autoPatrol = $state(true);
 
   const API_URL = 'http://localhost:8080';
 
@@ -45,37 +47,31 @@
     if (res.ok) {
       let text = await res.text();
       const assetBase = `${API_URL}/api/repositories/${repo.id}/assets/`;
-      
-      // Fix image paths in Markdown: ![alt](path)
       text = text.replace(/!\[([^\]]*)\]\((?!(?:http|https|ftp|data:))(?:\.\/)?([^)]+)\)/gi, `![$1](${assetBase}$2)`);
-      
-      // Fix image paths in HTML: <img src="path"> - strip ./ if present
-      text = text.replace(/<img([^>]+)src=["'](?!(?:http|https|ftp))(?:\.\/)?([^"']+)["']/gi, (match, pre, path) => {
-        return `<img${pre}src="${assetBase}${path}"`;
-      });
-
-      // Fix link paths in Markdown: [text](path)
+      text = text.replace(/<img([^>]+)src=["'](?!(?:http|https|ftp))(?:\.\/)?([^"']+)["']/gi, (match, pre, path) => `<img${pre}src="${assetBase}${path}"`);
       text = text.replace(/\[([^\]]*)\]\((?!(?:http|https|ftp|#))(?:\.\/)?([^)]+)\)/gi, `[$1](${assetBase}$2)`);
-
       readmeContent = await marked.parse(text, { gfm: true, breaks: true });
     } else {
       readmeContent = '<p style="color: var(--efinity-text-muted)">No mission briefing available for this asset.</p>';
     }
   }
 
-  $effect(() => {
-    if (selectedRepo) fetchReadme(selectedRepo);
-  });
+  $effect(() => { if (selectedRepo) fetchReadme(selectedRepo); });
 
   async function addRepo() {
     if (!newName || !newUrl) return;
     const res = await fetch(`${API_URL}/api/repositories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newName, url: newUrl, interval_minutes: interval })
+      body: JSON.stringify({ 
+        name: newName, 
+        url: newUrl, 
+        interval_minutes: interval,
+        auto_patrol: autoPatrol ? 1 : 0 
+      })
     });
     if (res.ok) {
-      newName = ''; newUrl = ''; showAddModal = false; fetchRepos();
+      newName = ''; newUrl = ''; autoPatrol = true; showAddModal = false; fetchRepos();
     }
   }
 
@@ -86,7 +82,7 @@
   }
 
   function getProgress(repo: Repository) {
-    if (!repo.last_sync || repo.status === 'syncing') return 0;
+    if (!repo.last_sync || repo.status === 'syncing' || repo.auto_patrol === 0) return 0;
     const lastSync = new Date(repo.last_sync).getTime();
     const nextSync = lastSync + repo.interval_minutes * 60000;
     const total = repo.interval_minutes * 60000;
@@ -96,6 +92,7 @@
   }
 
   function getRemainingTime(repo: Repository) {
+    if (repo.auto_patrol === 0) return 'Manual Patrol Only';
     if (!repo.last_sync || repo.status === 'syncing') return 'Syncing...';
     const lastSync = new Date(repo.last_sync).getTime();
     const nextSync = lastSync + repo.interval_minutes * 60000;
@@ -111,7 +108,6 @@
     return lastCommit.trim().split('\n').map(line => {
       const parts = line.split('|');
       if (parts.length < 4) return null;
-      
       const refs = parts[4] || '';
       let branch = '';
       if (refs) {
@@ -172,7 +168,7 @@
             <div class="radial-timer" data-tooltip={getRemainingTime(repo)}>
               <svg width="40" height="40">
                 <circle cx="20" cy="20" r="16" />
-                <circle cx="20" cy="20" r="16" class="progress" class:active-pulse={repo.status !== 'syncing'}
+                <circle cx="20" cy="20" r="16" class="progress" class:active-pulse={repo.status !== 'syncing' && repo.auto_patrol === 1}
                   style="stroke-dasharray: 100; stroke-dashoffset: {100 - (repo.progress || 0)}" />
               </svg>
             </div>
@@ -228,7 +224,7 @@
             <div class="radial-timer" data-tooltip={getRemainingTime(repo)} style="width: 32px; height: 32px;">
               <svg width="32" height="32">
                 <circle cx="16" cy="16" r="12" />
-                <circle cx="16" cy="16" r="12" class="progress" class:active-pulse={repo.status !== 'syncing'}
+                <circle cx="16" cy="16" r="12" class="progress" class:active-pulse={repo.status !== 'syncing' && repo.auto_patrol === 1}
                   style="stroke-dasharray: 75; stroke-dashoffset: {75 - (repo.progress || 0) * 0.75}" />
               </svg>
             </div>
@@ -270,7 +266,7 @@
                 <div class="radial-timer" data-tooltip={getRemainingTime(selectedRepo)} style="width: 32px; height: 32px;">
                   <svg width="32" height="32">
                     <circle cx="16" cy="16" r="12" />
-                    <circle cx="16" cy="16" r="12" class="progress" class:active-pulse={selectedRepo.status !== 'syncing'}
+                    <circle cx="16" cy="16" r="12" class="progress" class:active-pulse={selectedRepo.status !== 'syncing' && selectedRepo.auto_patrol === 1}
                       style="stroke-dasharray: 75; stroke-dashoffset: {75 - (selectedRepo.progress || 0) * 0.75}" />
                   </svg>
                 </div>
@@ -337,7 +333,16 @@
         <input bind:value={newUrl} placeholder="https://github.com/..." />
         <label>SYNC INTERVAL (MINUTES)</label>
         <input type="number" bind:value={interval} />
-        <div style="display: flex; gap: 16px; margin-top: 12px;">
+
+        <div style="margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; border: 1px solid var(--glass-border);">
+          <div>
+            <div style="font-weight: 700; font-size: 0.9rem;">KEEP ACTIVE PATROL</div>
+            <div style="font-size: 0.75rem; color: var(--efinity-text-muted);">Continuously monitor and sync this asset.</div>
+          </div>
+          <input type="checkbox" bind:checked={autoPatrol} style="width: 24px; height: 24px; margin: 0; cursor: pointer; accent-color: var(--efinity-blue);" />
+        </div>
+
+        <div style="display: flex; gap: 16px;">
           <button style="flex: 2;" onclick={addRepo}>ACTIVATE</button>
           <button class="secondary" style="flex: 1;" onclick={() => showAddModal = false}>CANCEL</button>
         </div>

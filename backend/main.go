@@ -41,7 +41,7 @@ func main() {
 	// Scheduler
 	go func() {
 		for {
-			rows, _ := db.Query("SELECT id, name, url, interval_minutes, last_sync FROM repositories")
+			rows, _ := db.Query("SELECT id, name, url, interval_minutes, last_sync FROM repositories WHERE auto_patrol = 1")
 			for rows.Next() {
 				var id int
 				var name, url string

@@ -32,7 +32,8 @@ func initDB() {
 		open_issues INTEGER DEFAULT 0,
 		commit_history TEXT,
 		health_score INTEGER DEFAULT 0,
-		default_branch TEXT DEFAULT 'main'
+		default_branch TEXT DEFAULT 'main',
+		auto_patrol INTEGER DEFAULT 1
 	);`
 
 	_, err = db.Exec(createTable)
@@ -47,4 +48,5 @@ func initDB() {
 	db.Exec("ALTER TABLE repositories ADD COLUMN commit_history TEXT")
 	db.Exec("ALTER TABLE repositories ADD COLUMN health_score INTEGER DEFAULT 0")
 	db.Exec("ALTER TABLE repositories ADD COLUMN default_branch TEXT DEFAULT 'main'")
+	db.Exec("ALTER TABLE repositories ADD COLUMN auto_patrol INTEGER DEFAULT 1")
 }

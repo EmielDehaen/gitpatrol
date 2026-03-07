@@ -72,10 +72,11 @@ type Repository struct {
 	CommitHistory   string `json:"commit_history"`
 	HealthScore     int    `json:"health_score"`
 	DefaultBranch   string `json:"default_branch"`
+	AutoPatrol      int    `json:"auto_patrol"`
 }
 
 func getRepositories(c echo.Context) error {
-	rows, err := db.Query("SELECT id, name, url, interval_minutes, last_sync, status, last_commit, error_message, stars, forks, open_issues, commit_history, health_score, default_branch FROM repositories")
+	rows, err := db.Query("SELECT id, name, url, interval_minutes, last_sync, status, last_commit, error_message, stars, forks, open_issues, commit_history, health_score, default_branch, auto_patrol FROM repositories")
 	if err != nil {
 		return err
 	}
@@ -85,7 +86,7 @@ func getRepositories(c echo.Context) error {
 	for rows.Next() {
 		var r Repository
 		var lastSync sql.NullString
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.IntervalMinutes, &lastSync, &r.Status, &r.LastCommit, &r.ErrorMessage, &r.Stars, &r.Forks, &r.OpenIssues, &r.CommitHistory, &r.HealthScore, &r.DefaultBranch)
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.IntervalMinutes, &lastSync, &r.Status, &r.LastCommit, &r.ErrorMessage, &r.Stars, &r.Forks, &r.OpenIssues, &r.CommitHistory, &r.HealthScore, &r.DefaultBranch, &r.AutoPatrol)
 		if err != nil {
 			return err
 		}
@@ -101,7 +102,7 @@ func addRepository(c echo.Context) error {
 		return err
 	}
 	
-	result, err := db.Exec("INSERT INTO repositories (name, url, interval_minutes) VALUES (?, ?, ?)", r.Name, r.URL, r.IntervalMinutes)
+	result, err := db.Exec("INSERT INTO repositories (name, url, interval_minutes, auto_patrol) VALUES (?, ?, ?, ?)", r.Name, r.URL, r.IntervalMinutes, r.AutoPatrol)
 	if err != nil {
 		return err
 	}
