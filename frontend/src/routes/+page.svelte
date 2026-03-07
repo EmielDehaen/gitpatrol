@@ -38,12 +38,22 @@
   }
 
   async function fetchReadme(id: number) {
+    if (!selectedRepo) return;
     readmeContent = 'Loading mission briefing...';
     readmeExpanded = false;
     const res = await fetch(`${API_URL}/api/repositories/${id}/readme`);
     if (res.ok) {
       const text = await res.text();
-      readmeContent = await marked.parse(text);
+      // Extract user/repo from URL
+      const parts = selectedRepo.url.replace('https://github.com/', '').split('/');
+      const baseUrl = `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/main/`;
+      
+      // Use marked with base URL for assets
+      readmeContent = await marked.parse(text, {
+        baseUrl: baseUrl,
+        gfm: true,
+        breaks: true
+      });
     } else {
       readmeContent = '<p style="color: var(--efinity-text-muted)">No mission briefing available for this asset.</p>';
     }

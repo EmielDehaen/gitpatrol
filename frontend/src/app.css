@@ -217,6 +217,9 @@ h1 {
 }
 
 .readme-content h1, .readme-content h2 { color: #fff; margin-top: 0; }
+.readme-content a { color: var(--efinity-blue); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+.readme-content a:hover { border-color: var(--efinity-blue); }
+.readme-content img { max-width: 100%; border-radius: 12px; margin: 20px 0; border: 1px solid var(--glass-border); }
 .readme-content code { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
 .readme-content pre { background: #000; padding: 20px; border-radius: 12px; overflow-x: auto; }
 
