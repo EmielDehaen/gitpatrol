@@ -77,18 +77,16 @@ func getLastCommits(repoPath string) string {
 		// If no direct ref, find which branch it belongs to
 		if refs == "" || refs == "()" {
 			hash := parts[0]
-			branchCmd := exec.Command("git", "--git-dir="+repoPath, "branch", "-a", "--contains", hash)
+			// for-each-ref is more reliable in mirror/bare repos
+			branchCmd := exec.Command("git", "--git-dir="+repoPath, "for-each-ref", "--format=%(refname:short)", "--contains", hash, "refs/heads", "refs/remotes")
 			branchOut, _ := branchCmd.CombinedOutput()
 			bLines := strings.Split(strings.TrimSpace(string(branchOut)), "\n")
-			if len(bLines) > 0 {
-				// Take the first branch that isn't a remote pointer
-				for _, b := range bLines {
-					b = strings.TrimSpace(strings.TrimPrefix(b, "*"))
-					if !strings.Contains(b, "->") {
-						parts[4] = "(" + b + ")"
-						break
-					}
-				}
+			
+			if len(bLines) > 0 && bLines[0] != "" {
+				// Take the first branch, clean it up
+				branch := bLines[0]
+				branch = strings.TrimPrefix(branch, "origin/")
+				parts[4] = "(" + branch + ")"
 			}
 		}
 		results = append(results, strings.Join(parts, "|"))
