@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { marked } from 'marked';
 
   interface Repository {
     id: number;
@@ -21,6 +22,8 @@
   let repositories = $state<Repository[]>([]);
   let viewMode = $state<'grid' | 'list'>('grid');
   let selectedRepo = $state<Repository | null>(null);
+  let readmeContent = $state('');
+  let readmeExpanded = $state(false);
   let showAddModal = $state(false);
   let newName = $state('');
   let newUrl = $state('');
@@ -33,6 +36,22 @@
     if (!res.ok) return;
     repositories = await res.json();
   }
+
+  async function fetchReadme(id: number) {
+    readmeContent = 'Loading mission briefing...';
+    readmeExpanded = false;
+    const res = await fetch(`${API_URL}/api/repositories/${id}/readme`);
+    if (res.ok) {
+      const text = await res.text();
+      readmeContent = await marked.parse(text);
+    } else {
+      readmeContent = '<p style="color: var(--efinity-text-muted)">No mission briefing available for this asset.</p>';
+    }
+  }
+
+  $effect(() => {
+    if (selectedRepo) fetchReadme(selectedRepo.id);
+  });
 
   async function addRepo() {
     if (!newName || !newUrl) return;
@@ -275,7 +294,20 @@
         </div>
       </div>
       <div class="modal-body">
-        <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.75rem; font-weight: 800; margin-bottom: 24px;">Recent Mission Logs</h4>
+        <div class="readme-container" class:readme-expanded={readmeExpanded} style="max-height: {readmeExpanded ? '2000px' : '3000px'};">
+          <div style="max-height: {readmeExpanded ? 'none' : '200px'}; overflow: hidden;">
+            <div class="readme-content">
+              {@html readmeContent}
+            </div>
+          </div>
+          {#if !readmeExpanded}
+            <div class="readme-fade">
+              <button class="secondary" style="font-size: 0.65rem; padding: 8px 16px;" onclick={() => readmeExpanded = true}>READ FULL BRIEFING</button>
+            </div>
+          {/if}
+        </div>
+
+        <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.75rem; font-weight: 800; margin-top: 48px; margin-bottom: 24px;">Recent Mission Logs</h4>
         <div style="display: flex; flex-direction: column; gap: 12px;">
           {#each parseCommits(selectedRepo.last_commit) as commit}
             <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">

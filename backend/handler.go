@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -127,4 +128,25 @@ func deleteRepository(c echo.Context) error {
 	os.RemoveAll("./data/" + name)
 	
 	return c.NoContent(http.StatusNoContent)
+}
+
+func getReadme(c echo.Context) error {
+	id := c.Param("id")
+	var name string
+	err := db.QueryRow("SELECT name FROM repositories WHERE id = ?", id).Scan(&name)
+	if err != nil {
+		return err
+	}
+
+	repoPath := filepath.Join("./data", name)
+	// Try common readme filenames
+	filenames := []string{"README.md", "readme.md", "README.txt", "README"}
+	for _, f := range filenames {
+		content, err := os.ReadFile(filepath.Join(repoPath, f))
+		if err == nil {
+			return c.String(http.StatusOK, string(content))
+		}
+	}
+
+	return c.String(http.StatusNotFound, "No README found")
 }
