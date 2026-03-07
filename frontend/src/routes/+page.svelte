@@ -82,17 +82,14 @@
       if (parts.length < 4) return null;
       
       const refs = parts[4] || '';
-      // Extract branch from something like "(HEAD -> main, origin/main)"
-      let branch = 'unknown';
+      let branch = '';
       if (refs) {
-        // Clean parentheses and split refs
         const cleanRefs = refs.replace(/[()]/g, '').split(', ');
-        // Find first ref that isn't HEAD, origin/HEAD or tag:
         const priorityRef = cleanRefs.find(r => 
           !r.includes('HEAD') && !r.startsWith('tag:')
         ) || cleanRefs[0];
         
-        branch = priorityRef?.split(' -> ').pop()?.replace('origin/', '') || 'main';
+        branch = priorityRef?.split(' -> ').pop()?.replace('remotes/origin/', '').replace('origin/', '').trim() || '';
       }
 
       return { 
@@ -283,7 +280,9 @@
           {#each parseCommits(selectedRepo.last_commit) as commit}
             <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
               <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                <span class="branch-badge">{commit.branch}</span>
+                {#if commit.branch}
+                  <span class="branch-badge">{commit.branch}</span>
+                {/if}
                 <span style="font-weight: 600; font-size: 1rem;">{commit.message}</span>
               </div>
               <div style="font-size: 0.8rem; color: var(--efinity-text-muted); font-weight: 500;">{commit.author} • {commit.date} • <span style="color: var(--efinity-blue); font-family: monospace;">{commit.hash.substring(0,7)}</span></div>
