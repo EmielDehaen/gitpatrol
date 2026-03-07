@@ -153,7 +153,7 @@
 <!-- Modal -->
 {#if showModal}
   <div class="modal-overlay" onclick={() => showModal = false}>
-    <div class="modal-content" onclick|stopPropagation>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()} role="presentation">
       <h2 style="margin-top: 0; margin-bottom: 32px;">Add Repository</h2>
       
       <label>Display Name</label>

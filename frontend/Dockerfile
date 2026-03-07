@@ -4,6 +4,8 @@ WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install
 COPY . .
+# Generate SvelteKit types before build to avoid tsconfig warnings
+RUN bun x svelte-kit sync
 RUN bun run build
 
 FROM node:20-alpine
