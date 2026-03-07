@@ -5,7 +5,7 @@ services:
       - "8080:8080"
     volumes:
       - ./backend/data:/root/data
-      - ./backend/gitpatrol.db:/root/gitpatrol.db
+      - ./backend/db:/root/db
 
   frontend:
     build: ./frontend

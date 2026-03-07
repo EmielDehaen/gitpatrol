@@ -4,13 +4,15 @@ import (
 	"database/sql"
 	_ "modernc.org/sqlite"
 	"log"
+	"os"
 )
 
 var db *sql.DB
 
 func initDB() {
+	os.MkdirAll("./db", 0755)
 	var err error
-	db, err = sql.Open("sqlite", "./gitpatrol.db")
+	db, err = sql.Open("sqlite", "./db/gitpatrol.db")
 	if err != nil {
 		log.Fatal(err)
 	}
