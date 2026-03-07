@@ -90,6 +90,11 @@
     }).filter(c => c !== null);
   }
 
+  function handleAvatarError(e: Event) {
+    const img = e.target as HTMLImageElement;
+    img.src = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
+  }
+
   function getAvatarUrl(url: string) {
     // Extract user from https://github.com/user/repo
     const parts = url.replace('https://github.com/', '').split('/');
@@ -149,7 +154,7 @@
 
           <div class="card-header">
             <div style="display: flex; gap: 16px; align-items: flex-start;">
-              <img src={getAvatarUrl(repo.url)} alt="" style="width: 44px; height: 44px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-border);" />
+              <img src={getAvatarUrl(repo.url)} onerror={handleAvatarError} alt="" style="width: 44px; height: 44px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-border);" />
               <div>
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
                   <h3 class="repo-name" style="margin: 0;">{repo.name}</h3>
@@ -199,7 +204,7 @@
                   style="stroke-dasharray: 75; stroke-dashoffset: {75 - (repo.progress || 0) * 0.75}" />
               </svg>
             </div>
-            <img src={getAvatarUrl(repo.url)} alt="" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--glass-border);" />
+            <img src={getAvatarUrl(repo.url)} onerror={handleAvatarError} alt="" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--glass-border);" />
             <div>
               <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="font-weight: 700; font-size: 1.1rem;">{repo.name}</div>
