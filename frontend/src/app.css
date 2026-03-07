@@ -1,0 +1,92 @@
+:root {
+  --efinity-blue: #0070f3;
+  --efinity-dark: #0a0a0a;
+  --efinity-gray: #1a1a1a;
+  --efinity-light: #ffffff;
+  --efinity-text-muted: #888888;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--efinity-dark);
+  color: var(--efinity-light);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+h1 {
+  font-weight: 800;
+  font-size: 2.5rem;
+  margin-bottom: 40px;
+  background: linear-gradient(135deg, #fff 0%, var(--efinity-blue) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card {
+  background: var(--efinity-gray);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--efinity-blue);
+  transform: translateY(-2px);
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-synced { background: rgba(0, 112, 243, 0.1); color: var(--efinity-blue); }
+.status-syncing { background: rgba(255, 255, 255, 0.1); color: #fff; animation: pulse 2s infinite; }
+.status-error { background: rgba(255, 0, 0, 0.1); color: #ff0000; }
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+input, button {
+  background: #111;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-right: 8px;
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--efinity-blue);
+}
+
+button {
+  background: var(--efinity-blue);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
