@@ -26,7 +26,12 @@ func initDB() {
 		last_sync TIMESTAMP,
 		status TEXT DEFAULT 'pending',
 		last_commit TEXT,
-		error_message TEXT
+		error_message TEXT,
+		stars INTEGER DEFAULT 0,
+		forks INTEGER DEFAULT 0,
+		open_issues INTEGER DEFAULT 0,
+		commit_history TEXT, -- JSON string of recent activity
+		health_score INTEGER DEFAULT 0
 	);`
 
 	_, err = db.Exec(createTable)

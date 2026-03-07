@@ -10,11 +10,17 @@
     status: string;
     last_commit: string;
     error_message: string;
+    stars: number;
+    forks: number;
+    open_issues: number;
+    commit_history: string;
+    health_score: number;
     countdown?: string;
   }
 
   let repositories = $state<Repository[]>([]);
-  let showModal = $state(false);
+  let selectedRepo = $state<Repository | null>(null);
+  let showAddModal = $state(false);
   let newName = $state('');
   let newUrl = $state('');
   let interval = $state(60);
@@ -36,7 +42,7 @@
     if (res.ok) {
       newName = '';
       newUrl = '';
-      showModal = false;
+      showAddModal = false;
       fetchRepos();
     }
   }
@@ -52,32 +58,27 @@
     return `${mins}m ${secs}s`;
   }
 
-  function getCommitAge(lastCommit: string) {
-    if (!lastCommit) return 'Unknown';
-    // Format: "hash date"
-    const parts = lastCommit.split(' ');
-    if (parts.length < 2) return 'Unknown';
-    const commitDate = new Date(parts.slice(1).join(' '));
-    const diff = Date.now() - commitDate.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (days === 0) return 'Today';
-    if (days < 30) return `${days}d ago`;
-    return `${Math.floor(days/30)}mo ago`;
+  function parseCommits(lastCommit: string) {
+    if (!lastCommit) return [];
+    return lastCommit.trim().split('\n').map(line => {
+      const [hash, author, date, message] = line.split('|');
+      return { hash, author, date, message };
+    });
+  }
+
+  function getHistoryArray(historyStr: string) {
+    try {
+      return JSON.parse(historyStr || '[]');
+    } catch {
+      return [];
+    }
   }
 
   onMount(() => {
     fetchRepos();
-    
-    // WebSockets
     const ws = new WebSocket('ws://localhost:8080/ws');
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'status_update') {
-        fetchRepos();
-      }
-    };
+    ws.onmessage = () => fetchRepos();
 
-    // Countdown timer interval
     const timer = setInterval(() => {
       repositories = repositories.map(r => ({
         ...r,
@@ -91,83 +92,115 @@
 
 <div class="container">
   <header>
-    <h1>GitPatrol ⚡</h1>
+    <div>
+      <h1>Patrol Control ⚡</h1>
+      <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-weight: 600;">Monitoring {repositories.length} tactical assets</p>
+    </div>
     <div style="text-align: right;">
-      <div style="font-size: 0.8rem; color: var(--efinity-text-muted); font-weight: 700; text-transform: uppercase;">System Status</div>
-      <div style="color: var(--status-green); font-size: 0.9rem; font-weight: 600;">● Online</div>
+      <div class="badge" style="color: var(--status-green)">
+        <span style="width: 8px; height: 8px; background: var(--status-green); border-radius: 50%;"></span>
+        Core Active
+      </div>
     </div>
   </header>
 
   <div class="repo-grid">
     {#each repositories as repo (repo.id)}
-      <div class="card">
+      <div class="card" onclick={() => selectedRepo = repo}>
+        <div class="health-score" style="color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}; border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}44">
+          {repo.health_score}
+        </div>
+        
         <div class="card-header">
           <div>
             <h3 class="repo-name">{repo.name}</h3>
             <div class="repo-url">{repo.url}</div>
           </div>
-          <div class="badge" style="color: {repo.status === 'synced' ? 'var(--status-green)' : repo.status === 'error' ? 'var(--status-red)' : '#fff'}">
-            <span class="status-dot" style="background: {repo.status === 'synced' ? 'var(--status-green)' : repo.status === 'error' ? 'var(--status-red)' : '#fff'}"></span>
-            {repo.status}
-          </div>
         </div>
 
-        {#if repo.last_commit}
-          <div class="commit-log">
-            {repo.last_commit.split(' ')[0]} - {repo.last_commit.split(' ').slice(1, 4).join(' ')}
-          </div>
-        {/if}
+        <div class="stats-row">
+          <div class="stat-item"><b>{repo.stars}</b> stars</div>
+          <div class="stat-item"><b>{repo.open_issues}</b> issues</div>
+        </div>
 
-        <div class="info-row">
+        <div class="mini-chart">
+          {#each getHistoryArray(repo.commit_history) as count}
+            <div class="chart-bar" style="height: {Math.min(100, (count / 10) * 100)}%;"></div>
+          {/each}
+        </div>
+
+        <div class="info-row" style="margin-top: 24px;">
           <div class="info-item">
             <label>Next Sync</label>
             <span>{repo.countdown || '--:--'}</span>
           </div>
-          <div class="info-item">
-            <label>Activity</label>
-            <span style="color: {getCommitAge(repo.last_commit).includes('mo') ? 'var(--status-red)' : 'var(--efinity-text-main)'}">
-              {getCommitAge(repo.last_commit)}
-            </span>
-          </div>
           <div class="info-item" style="text-align: right;">
-            <label>Interval</label>
-            <span>{repo.interval_minutes}m</span>
+            <label>Status</label>
+            <span style="color: {repo.status === 'synced' ? 'var(--status-green)' : '#fff'}">{repo.status}</span>
           </div>
         </div>
-
-        {#if repo.error_message}
-          <div style="margin-top: 16px; font-size: 0.75rem; color: var(--status-red); padding: 8px; background: rgba(255,0,0,0.1); border-radius: 4px;">
-            {repo.error_message}
-          </div>
-        {/if}
       </div>
     {/each}
   </div>
 </div>
 
-<!-- FAB -->
-<div class="fab" onclick={() => showModal = true}>
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+<!-- Add Repo FAB -->
+<div class="fab" onclick={() => showAddModal = true}>
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
 </div>
 
-<!-- Modal -->
-{#if showModal}
-  <div class="modal-overlay" onclick={() => showModal = false}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()} role="presentation">
-      <h2 style="margin-top: 0; margin-bottom: 32px;">Add Repository</h2>
-      
-      <label>Display Name</label>
-      <input bind:value={newName} placeholder="e.g. opengem-core" />
+<!-- Detail Modal -->
+{#if selectedRepo}
+  <div class="modal-overlay" onclick={() => selectedRepo = null}>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+      <div class="modal-header">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <h2 style="margin: 0; font-size: 2rem;">{selectedRepo.name}</h2>
+            <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0;">{selectedRepo.url}</p>
+          </div>
+          <button class="secondary" onclick={() => selectedRepo = null}>Close</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.8rem;">Recent Activity</h4>
+        <div style="margin-top: 20px;">
+          {#each parseCommits(selectedRepo.last_commit) as commit}
+            <div class="commit-item">
+              <div class="commit-hash">{commit.hash.substring(0, 7)}</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600;">{commit.message}</div>
+                <div style="font-size: 0.8rem; color: var(--efinity-text-muted); margin-top: 4px;">{commit.author} • {commit.date}</div>
+              </div>
+            </div>
+          {/each}
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
 
-      <label>GitHub Repository URL</label>
-      <input bind:value={newUrl} placeholder="https://github.com/EmielDehaen/opengem" />
-
-      <label>Sync Interval (Minutes)</label>
-      <input bind:value={interval} type="number" />
-
-      <div style="display: flex; gap: 12px; margin-top: 20px;">
-        <button style="flex: 1; background: #222;" onclick={() => showModal = false}>Cancel</button>
-        <button style="flex: 2;" onclick={addRepo}>Add Patrol</button>
+<!-- Add Modal -->
+{#if showAddModal}
+  <div class="modal-overlay" onclick={() => showAddModal = false}>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()} style="max-width: 500px;">
+      <div class="modal-header">
+        <h2 style="margin: 0;">Add New Patrol</h2>
+      </div>
+      <div class="modal-body">
+        <label>Patrol Name</label>
+        <input bind:value={newName} placeholder="e.g. efinity-core" />
+        
+        <label>Repository URL</label>
+        <input bind:value={newUrl} placeholder="https://github.com/..." />
+        
+        <label>Sync Interval (Minutes)</label>
+        <input bind:value={interval} type="number" />
+        
+        <div style="display: flex; gap: 12px; margin-top: 20px;">
+          <button style="flex: 1;" onclick={addRepo}>Activate Patrol</button>
+          <button class="secondary" onclick={() => showAddModal = false}>Cancel</button>
+        </div>
       </div>
     </div>
   </div>
