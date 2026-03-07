@@ -135,6 +135,21 @@ func deleteRepository(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+func updateRepository(c echo.Context) error {
+	id := c.Param("id")
+	var r Repository
+	if err := c.Bind(&r); err != nil {
+		return err
+	}
+
+	_, err := db.Exec("UPDATE repositories SET interval_minutes = ?, auto_patrol = ? WHERE id = ?", r.IntervalMinutes, r.AutoPatrol, id)
+	if err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 func getReadme(c echo.Context) error {
 	id := c.Param("id")
 	var name string

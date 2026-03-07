@@ -24,6 +24,7 @@ func main() {
 	e.GET("/ws", handleWebSocket)
 	e.GET("/api/repositories", getRepositories)
 	e.POST("/api/repositories", addRepository)
+	e.PATCH("/api/repositories/:id", updateRepository)
 	e.DELETE("/api/repositories/:id", deleteRepository)
 	e.GET("/api/repositories/:id/readme", getReadme)
 	e.Static("/avatars", "./data/avatars")

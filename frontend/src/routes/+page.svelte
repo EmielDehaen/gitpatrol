@@ -81,6 +81,22 @@
     if (res.ok) { selectedRepo = null; fetchRepos(); }
   }
 
+  async function updateConfig() {
+    if (!selectedRepo) return;
+    const res = await fetch(`${API_URL}/api/repositories/${selectedRepo.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        interval_minutes: selectedRepo.interval_minutes,
+        auto_patrol: selectedRepo.auto_patrol
+      })
+    });
+    if (res.ok) {
+      fetchRepos();
+      alert('Patrol configuration updated.');
+    }
+  }
+
   function getProgress(repo: Repository) {
     if (!repo.last_sync || repo.status === 'syncing' || repo.auto_patrol === 0) return 0;
     const lastSync = new Date(repo.last_sync).getTime();
@@ -294,6 +310,21 @@
               <button class="secondary" style="font-size: 0.65rem; padding: 12px 24px;" onclick={() => readmeExpanded = true}>READ FULL MISSION BRIEFING</button>
             </div>
           {/if}
+        </div>
+
+        <div style="margin-top: 48px; background: rgba(255,255,255,0.02); border-radius: 24px; border: 1px solid var(--glass-border); padding: 32px;">
+          <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.75rem; font-weight: 800; margin-bottom: 24px; margin-top: 0;">Patrol Configuration</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div>
+              <label>SYNC INTERVAL (MIN)</label>
+              <input type="number" bind:value={selectedRepo.interval_minutes} style="margin-bottom: 0;" />
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; border: 1px solid var(--glass-border);">
+              <label style="margin: 0;">ACTIVE PATROL</label>
+              <input type="checkbox" checked={selectedRepo.auto_patrol === 1} onchange={(e) => selectedRepo!.auto_patrol = e.currentTarget.checked ? 1 : 0} style="width: 20px; height: 24px; margin: 0; cursor: pointer; accent-color: var(--efinity-blue);" />
+            </div>
+          </div>
+          <button style="width: 100%; margin-top: 24px; font-size: 0.8rem; padding: 14px;" onclick={updateConfig}>UPDATE CONFIGURATION</button>
         </div>
 
         <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.75rem; font-weight: 800; margin-top: 48px; margin-bottom: 24px;">Recent Mission Logs</h4>
