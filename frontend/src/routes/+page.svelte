@@ -139,7 +139,12 @@
 
           <div class="card-header">
             <div>
-              <h3 class="repo-name">{repo.name}</h3>
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                <h3 class="repo-name" style="margin: 0;">{repo.name}</h3>
+                {#if repo.status === 'synced'}
+                  <span class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); font-size: 0.6rem; padding: 2px 8px;">SYNCED</span>
+                {/if}
+              </div>
               <div class="repo-url">{repo.url.replace('https://github.com/', '')}</div>
             </div>
           </div>
@@ -162,12 +167,21 @@
       {#each repositories as repo (repo.id)}
         <div class="list-item" onclick={() => selectedRepo = repo}>
           <div style="display: flex; align-items: center; gap: 24px;">
-            <div class="radial-timer" style="width: 32px; height: 32px;">
-              <svg width="32" height="32"><circle cx="16" cy="16" r="12" /><circle cx="16" cy="16" r="12" class="progress" style="stroke-dasharray: 75; stroke-dashoffset: {(repo.progress || 0) * 0.75}" /></svg>
+            <div class="radial-timer" data-tooltip={getRemainingTime(repo)} style="width: 32px; height: 32px;">
+              <svg width="32" height="32">
+                <circle cx="16" cy="16" r="12" />
+                <circle cx="16" cy="16" r="12" class="progress" class:active-pulse={repo.status !== 'syncing'}
+                  style="stroke-dasharray: 75; stroke-dashoffset: {75 - (repo.progress || 0) * 0.75}" />
+              </svg>
             </div>
             <div>
-              <div style="font-weight: 700; font-size: 1.1rem;">{repo.name}</div>
-              <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">{repo.url}</div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-weight: 700; font-size: 1.1rem;">{repo.name}</div>
+                {#if repo.status === 'synced'}
+                  <span class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); font-size: 0.6rem; padding: 2px 8px;">SYNCED</span>
+                {/if}
+              </div>
+              <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">{repo.url.replace('https://github.com/', '')}</div>
             </div>
           </div>
           <div style="display: flex; gap: 40px; align-items: center;">
