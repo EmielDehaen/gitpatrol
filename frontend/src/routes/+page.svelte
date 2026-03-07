@@ -29,6 +29,7 @@
 
   async function fetchRepos() {
     const res = await fetch(`${API_URL}/api/repositories`);
+    if (!res.ok) return;
     repositories = await res.json();
   }
 
@@ -61,9 +62,11 @@
   function parseCommits(lastCommit: string) {
     if (!lastCommit) return [];
     return lastCommit.trim().split('\n').map(line => {
-      const [hash, author, date, message] = line.split('|');
+      const parts = line.split('|');
+      if (parts.length < 4) return null;
+      const [hash, author, date, message] = parts;
       return { hash, author, date, message };
-    });
+    }).filter(c => c !== null);
   }
 
   function getHistoryArray(historyStr: string) {
@@ -93,13 +96,13 @@
 <div class="container">
   <header>
     <div>
-      <h1>Patrol Control ⚡</h1>
-      <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-weight: 600;">Monitoring {repositories.length} tactical assets</p>
+      <h1>GitPatrol ⚡</h1>
+      <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.75rem;">Tactical Asset Monitoring</p>
     </div>
     <div style="text-align: right;">
-      <div class="badge" style="color: var(--status-green)">
-        <span style="width: 8px; height: 8px; background: var(--status-green); border-radius: 50%;"></span>
-        Core Active
+      <div class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.1);">
+        <span style="width: 6px; height: 6px; background: var(--status-green); border-radius: 50%; box-shadow: 0 0 8px var(--status-green);"></span>
+        Active Patrols: {repositories.length}
       </div>
     </div>
   </header>
@@ -107,14 +110,14 @@
   <div class="repo-grid">
     {#each repositories as repo (repo.id)}
       <div class="card" onclick={() => selectedRepo = repo}>
-        <div class="health-score" style="color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}; border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}44">
+        <div class="health-score" style="color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}; border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}33">
           {repo.health_score}
         </div>
         
         <div class="card-header">
           <div>
             <h3 class="repo-name">{repo.name}</h3>
-            <div class="repo-url">{repo.url}</div>
+            <div class="repo-url">{repo.url.replace('https://github.com/', '')}</div>
           </div>
         </div>
 
@@ -125,18 +128,18 @@
 
         <div class="mini-chart">
           {#each getHistoryArray(repo.commit_history) as count}
-            <div class="chart-bar" style="height: {Math.min(100, (count / 10) * 100)}%;"></div>
+            <div class="chart-bar" style="height: {Math.max(10, Math.min(100, (count / 10) * 100))}%; opacity: {count > 0 ? 0.8 : 0.2}"></div>
           {/each}
         </div>
 
-        <div class="info-row" style="margin-top: 24px;">
+        <div class="info-row">
           <div class="info-item">
             <label>Next Sync</label>
             <span>{repo.countdown || '--:--'}</span>
           </div>
           <div class="info-item" style="text-align: right;">
             <label>Status</label>
-            <span style="color: {repo.status === 'synced' ? 'var(--status-green)' : '#fff'}">{repo.status}</span>
+            <span style="color: {repo.status === 'synced' ? 'var(--status-green)' : repo.status === 'error' ? 'var(--status-red)' : '#fff'}">{repo.status}</span>
           </div>
         </div>
       </div>
@@ -146,7 +149,7 @@
 
 <!-- Add Repo FAB -->
 <div class="fab" onclick={() => showAddModal = true}>
-  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
 </div>
 
 <!-- Detail Modal -->
@@ -156,21 +159,21 @@
       <div class="modal-header">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div>
-            <h2 style="margin: 0; font-size: 2rem;">{selectedRepo.name}</h2>
-            <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0;">{selectedRepo.url}</p>
+            <h2 style="margin: 0; font-size: 2.2rem; font-weight: 800;">{selectedRepo.name}</h2>
+            <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-family: monospace;">{selectedRepo.url}</p>
           </div>
-          <button class="secondary" onclick={() => selectedRepo = null}>Close</button>
+          <button class="secondary" onclick={() => selectedRepo = null}>CLOSE</button>
         </div>
       </div>
       <div class="modal-body">
-        <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.8rem;">Recent Activity</h4>
-        <div style="margin-top: 20px;">
+        <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.75rem; font-weight: 800; margin-bottom: 24px;">Recent Mission Logs</h4>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
           {#each parseCommits(selectedRepo.last_commit) as commit}
-            <div class="commit-item">
-              <div class="commit-hash">{commit.hash.substring(0, 7)}</div>
+            <div class="commit-item" style="background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--glass-border);">
+              <div class="commit-hash" style="background: rgba(0, 112, 243, 0.1); padding: 4px 8px; border-radius: 6px; height: fit-content;">{commit.hash.substring(0, 7)}</div>
               <div style="flex: 1;">
-                <div style="font-weight: 600;">{commit.message}</div>
-                <div style="font-size: 0.8rem; color: var(--efinity-text-muted); margin-top: 4px;">{commit.author} • {commit.date}</div>
+                <div style="font-weight: 600; font-size: 0.95rem;">{commit.message}</div>
+                <div style="font-size: 0.75rem; color: var(--efinity-text-muted); margin-top: 6px; font-weight: 500;">{commit.author} • {commit.date}</div>
               </div>
             </div>
           {/each}
@@ -183,23 +186,30 @@
 <!-- Add Modal -->
 {#if showAddModal}
   <div class="modal-overlay" onclick={() => showAddModal = false}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()} style="max-width: 500px;">
-      <div class="modal-header">
-        <h2 style="margin: 0;">Add New Patrol</h2>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()} style="max-width: 540px; padding: 0;">
+      <div class="modal-header" style="background: linear-gradient(to bottom, #111, #0a0a0a); padding: 40px;">
+        <h2 style="margin: 0; font-size: 1.8rem; font-weight: 800;">Deploy New Patrol</h2>
+        <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-size: 0.9rem;">Configure a new repository for automated monitoring.</p>
       </div>
-      <div class="modal-body">
-        <label>Patrol Name</label>
-        <input bind:value={newName} placeholder="e.g. efinity-core" />
+      <div class="modal-body" style="padding: 40px;">
+        <div style="margin-bottom: 24px;">
+          <label>DISPLAY NAME</label>
+          <input bind:value={newName} placeholder="e.g. efinity-frontend" />
+        </div>
         
-        <label>Repository URL</label>
-        <input bind:value={newUrl} placeholder="https://github.com/..." />
+        <div style="margin-bottom: 24px;">
+          <label>REPOSITORY URL</label>
+          <input bind:value={newUrl} placeholder="https://github.com/..." />
+        </div>
         
-        <label>Sync Interval (Minutes)</label>
-        <input bind:value={interval} type="number" />
+        <div style="margin-bottom: 32px;">
+          <label>SYNC INTERVAL (MINUTES)</label>
+          <input bind:value={interval} type="number" />
+        </div>
         
-        <div style="display: flex; gap: 12px; margin-top: 20px;">
-          <button style="flex: 1;" onclick={addRepo}>Activate Patrol</button>
-          <button class="secondary" onclick={() => showAddModal = false}>Cancel</button>
+        <div style="display: flex; gap: 16px;">
+          <button style="flex: 2;" onclick={addRepo}>ACTIVATE PATROL</button>
+          <button class="secondary" style="flex: 1;" onclick={() => showAddModal = false}>CANCEL</button>
         </div>
       </div>
     </div>
