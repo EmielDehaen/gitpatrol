@@ -47,15 +47,18 @@
       
       // Manually replace relative paths with absolute GitHub raw URLs
       const parts = repo.url.replace('https://github.com/', '').split('/');
-      const rawBase = `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/${repo.default_branch}/`;
+      const branch = repo.default_branch || 'main';
+      const rawBase = `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/${branch}/`;
       
       // Fix image paths in Markdown: ![alt](path)
-      text = text.replace(/!\[([^\]]*)\]\((?!http|https|ftp)(?:\.\/)?([^)]+)\)/g, `![$1](${rawBase}$2)`);
+      text = text.replace(/!\[([^\]]*)\]\((?!http|https|ftp|#)(?:\.\/)?([^)]+)\)/g, `![$1](${rawBase}$2)`);
+      
       // Fix image paths in HTML: <img src="path">
-      text = text.replace(/<img[^>]+src=["'](?!(?:http|https|ftp))(?:\.\/)?([^"']+)["'][^>]*>/g, (match, path) => {
-        return match.replace(path, rawBase + path);
+      text = text.replace(/<img([^>]+)src=["'](?!(?:http|https|ftp))(?:\.\/)?([^"']+)["']/g, (match, pre, path) => {
+        return `<img${pre}src="${rawBase}${path}"`;
       });
-      // Fix link paths: [text](path)
+
+      // Fix link paths in Markdown: [text](path)
       text = text.replace(/\[([^\]]*)\]\((?!http|https|ftp|#)(?:\.\/)?([^)]+)\)/g, `[$1](${rawBase}$2)`);
 
       readmeContent = await marked.parse(text, { gfm: true, breaks: true });
