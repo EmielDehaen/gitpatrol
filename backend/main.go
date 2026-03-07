@@ -23,6 +23,7 @@ func main() {
 	e.GET("/ws", handleWebSocket)
 	e.GET("/api/repositories", getRepositories)
 	e.POST("/api/repositories", addRepository)
+	e.DELETE("/api/repositories/:id", deleteRepository)
 
 	// Scheduler
 	go func() {

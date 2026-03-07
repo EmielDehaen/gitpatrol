@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -104,4 +105,26 @@ func addRepository(c echo.Context) error {
 	go syncRepo(int(id), r.URL, r.Name)
 	
 	return c.JSON(http.StatusCreated, map[string]int{"id": int(id)})
+}
+
+func deleteRepository(c echo.Context) error {
+	id := c.Param("id")
+	
+	// Get name to delete folder
+	var name string
+	err := db.QueryRow("SELECT name FROM repositories WHERE id = ?", id).Scan(&name)
+	if err != nil {
+		return err
+	}
+
+	// Delete from DB
+	_, err = db.Exec("DELETE FROM repositories WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	// Delete folder
+	os.RemoveAll("./data/" + name)
+	
+	return c.NoContent(http.StatusNoContent)
 }

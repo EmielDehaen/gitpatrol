@@ -48,6 +48,17 @@
     }
   }
 
+  async function deleteRepo(id: number) {
+    if (!confirm('Are you sure you want to terminate this patrol? All local data will be deleted.')) return;
+    const res = await fetch(`${API_URL}/api/repositories/${id}`, {
+      method: 'DELETE'
+    });
+    if (res.ok) {
+      selectedRepo = null;
+      fetchRepos();
+    }
+  }
+
   function calculateCountdown(repo: Repository) {
     if (!repo.last_sync || repo.status === 'syncing') return '--:--';
     const lastSync = new Date(repo.last_sync).getTime();
@@ -177,6 +188,13 @@
               </div>
             </div>
           {/each}
+        </div>
+
+        <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid rgba(255,0,0,0.1);">
+          <h4 style="color: var(--status-red); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em; margin-bottom: 16px;">Danger Zone</h4>
+          <button style="background: rgba(255, 77, 77, 0.1); color: var(--status-red); box-shadow: none; border: 1px solid rgba(255, 77, 77, 0.2); width: 100%;" onclick={() => deleteRepo(selectedRepo!.id)}>
+            TERMINATE PATROL
+          </button>
         </div>
       </div>
     </div>
