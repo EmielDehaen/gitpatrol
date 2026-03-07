@@ -45,21 +45,20 @@
     if (res.ok) {
       let text = await res.text();
       
-      // Manually replace relative paths with absolute GitHub raw URLs
       const parts = repo.url.replace('https://github.com/', '').split('/');
-      const branch = repo.default_branch || 'main';
-      const rawBase = `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/${branch}/`;
-      
-      // Fix image paths in Markdown: ![alt](path)
-      text = text.replace(/!\[([^\]]*)\]\((?!http|https|ftp|#)(?:\.\/)?([^)]+)\)/g, `![$1](${rawBase}$2)`);
-      
-      // Fix image paths in HTML: <img src="path">
-      text = text.replace(/<img([^>]+)src=["'](?!(?:http|https|ftp))(?:\.\/)?([^"']+)["']/g, (match, pre, path) => {
-        return `<img${pre}src="${rawBase}${path}"`;
-      });
-
-      // Fix link paths in Markdown: [text](path)
-      text = text.replace(/\[([^\]]*)\]\((?!http|https|ftp|#)(?:\.\/)?([^)]+)\)/g, `[$1](${rawBase}$2)`);
+      if (parts.length >= 2) {
+        const user = parts[0];
+        const repoName = parts[1].replace('.git', '');
+        const branch = repo.default_branch || 'main';
+        const rawBase = `https://raw.githubusercontent.com/${user}/${repoName}/${branch}/`;
+        
+        // Robust asset mapping
+        text = text.replace(/!\[([^\]]*)\]\((?!(?:http|https|ftp|data:))(?:\.\/)?([^)]+)\)/gi, `![$1](${rawBase}$2)`);
+        text = text.replace(/<img[^>]+src=["'](?!(?:http|https|ftp|data:))(?:\.\/)?([^"']+)["'][^>]*>/gi, (match) => {
+          return match.replace(/src=["'](?:\.\/)?([^"']+)["']/i, (srcMatch, path) => `src="${rawBase}${path}"`);
+        });
+        text = text.replace(/\[([^\]]*)\]\((?!(?:http|https|ftp|#))(?:\.\/)?([^)]+)\)/gi, `[$1](${rawBase}$2)`);
+      }
 
       readmeContent = await marked.parse(text, { gfm: true, breaks: true });
     } else {
@@ -96,7 +95,6 @@
     const total = repo.interval_minutes * 60000;
     const remaining = nextSync - Date.now();
     if (remaining <= 0) return 0;
-    // Calculation for SVG stroke-dashoffset (Circle radius is 16, circumference is ~100)
     const percentage = remaining / total;
     return 100 * percentage;
   }
@@ -122,20 +120,11 @@
       let branch = '';
       if (refs) {
         const cleanRefs = refs.replace(/[()]/g, '').split(', ');
-        const priorityRef = cleanRefs.find(r => 
-          !r.includes('HEAD') && !r.startsWith('tag:')
-        ) || cleanRefs[0];
-        
+        const priorityRef = cleanRefs.find(r => !r.includes('HEAD') && !r.startsWith('tag:')) || cleanRefs[0];
         branch = priorityRef?.split(' -> ').pop()?.replace('remotes/origin/', '').replace('origin/', '').trim() || '';
       }
 
-      return { 
-        hash: parts[0], 
-        author: parts[1], 
-        date: parts[2], 
-        message: parts[3],
-        branch: branch
-      };
+      return { hash: parts[0], author: parts[1], date: parts[2], message: parts[3], branch };
     }).filter(c => c !== null);
   }
 
@@ -145,11 +134,9 @@
   }
 
   function getAvatarUrl(url: string) {
-    // Extract user from https://github.com/user/repo
     const parts = url.replace('https://github.com/', '').split('/');
     if (parts.length > 0) {
-      const username = parts[0];
-      return `${API_URL}/avatars/${username}.png`;
+      return `${API_URL}/avatars/${parts[0]}.png`;
     }
     return '';
   }
@@ -164,209 +151,3 @@
     return () => clearInterval(timer);
   });
 </script>
-
-<div class="container">
-  <header>
-    <div>
-      <h1>GitPatrol ⚡</h1>
-      <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em;">Tactical Asset Monitoring</p>
-    </div>
-    
-    <div style="display: flex; gap: 24px; align-items: center;">
-      <div class="view-toggle">
-        <button class:active={viewMode === 'grid'} onclick={() => viewMode = 'grid'}>GRID</button>
-        <button class:active={viewMode === 'list'} onclick={() => viewMode = 'list'}>LIST</button>
-      </div>
-      <div class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05);">
-        <span style="width: 6px; height: 6px; background: var(--status-green); border-radius: 50%;"></span>
-        SYSTEM ONLINE
-      </div>
-    </div>
-  </header>
-
-  {#if viewMode === 'grid'}
-    <div class="repo-grid">
-      {#each repositories as repo (repo.id)}
-        <div class="card" onclick={() => selectedRepo = repo}>
-          <div style="position: absolute; top: 32px; right: 32px; display: flex; align-items: center; gap: 16px;">
-            <div class="radial-timer" data-tooltip={getRemainingTime(repo)}>
-              <svg width="40" height="40">
-                <circle cx="20" cy="20" r="16" />
-                <circle cx="20" cy="20" r="16" class="progress" class:active-pulse={repo.status !== 'syncing'}
-                  style="stroke-dasharray: 100; stroke-dashoffset: {100 - (repo.progress || 0)}" />
-              </svg>
-            </div>
-            <div class="health-score" data-tooltip="Tactical Health Score" style="color: {repo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}44">
-              {repo.health_score}
-            </div>
-          </div>
-
-          <div class="card-header">
-            <div style="display: flex; gap: 16px; align-items: flex-start;">
-              <img src={getAvatarUrl(repo.url)} onerror={handleAvatarError} alt="" style="width: 44px; height: 44px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-border);" />
-              <div>
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
-                  <h3 class="repo-name" style="margin: 0;">{repo.name}</h3>
-                  {#if repo.status === 'synced'}
-                    <span class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); font-size: 0.6rem; padding: 2px 8px;">SYNCED</span>
-                  {/if}
-                </div>
-                <div class="repo-url">{repo.url.replace('https://github.com/', '')}</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="stats-row">
-            <div class="stat-item" data-tooltip="GitHub Stars">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--status-yellow)" style="opacity: 0.8;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-              <b>{repo.stars}</b>
-            </div>
-            <div class="stat-item" data-tooltip="Open Issues">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <b>{repo.open_issues}</b>
-            </div>
-          </div>
-
-          <div class="mini-chart">
-            {#each JSON.parse(repo.commit_history || '[]') as count}
-              <div class="chart-bar" 
-                style="height: {count === 0 ? '4px' : Math.min(100, (count / 10) * 100)}%; 
-                       background: {count === 0 ? 'rgba(255,255,255,0.05)' : `rgba(0, 112, 243, ${0.3 + (Math.min(count, 10) / 10) * 0.7})`};
-                       box-shadow: {count > 5 ? `0 0 12px rgba(0, 112, 243, ${(Math.min(count, 10) / 10) * 0.4})` : 'none'};
-                       border-bottom: {count === 0 ? '1px solid rgba(255,255,255,0.1)' : 'none'};"
-                data-tooltip="{count} commits">
-              </div>
-            {/each}
-          </div>
-        </div>
-      {/each}
-    </div>
-  {:else}
-    <div class="repo-list">
-      {#each repositories as repo (repo.id)}
-        <div class="list-item" onclick={() => selectedRepo = repo}>
-          <div style="display: flex; align-items: center; gap: 24px;">
-            <div class="radial-timer" data-tooltip={getRemainingTime(repo)} style="width: 32px; height: 32px;">
-              <svg width="32" height="32">
-                <circle cx="16" cy="16" r="12" />
-                <circle cx="16" cy="16" r="12" class="progress" class:active-pulse={repo.status !== 'syncing'}
-                  style="stroke-dasharray: 75; stroke-dashoffset: {75 - (repo.progress || 0) * 0.75}" />
-              </svg>
-            </div>
-            <img src={getAvatarUrl(repo.url)} onerror={handleAvatarError} alt="" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--glass-border);" />
-            <div>
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="font-weight: 700; font-size: 1.1rem;">{repo.name}</div>
-                {#if repo.status === 'synced'}
-                  <span class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); font-size: 0.6rem; padding: 2px 8px;">SYNCED</span>
-                {/if}
-              </div>
-              <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">{repo.url.replace('https://github.com/', '')}</div>
-            </div>
-          </div>
-          <div style="display: flex; gap: 40px; align-items: center;">
-            <div class="stat-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--status-yellow)"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-              <b>{repo.stars}</b>
-            </div>
-            <div class="stat-item"><b>{repo.health_score}</b> Health</div>
-            <div class="badge" style="color: {repo.status === 'synced' ? 'var(--status-green)' : '#fff'}">{repo.status}</div>
-          </div>
-        </div>
-      {/each}
-    </div>
-  {/if}
-</div>
-
-<div class="fab" onclick={() => showAddModal = true}>
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-</div>
-
-{#if selectedRepo}
-  <div class="modal-overlay" onclick={() => selectedRepo = null}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
-      <div class="modal-header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="display: flex; align-items: center; gap: 24px;">
-            <img src={getAvatarUrl(selectedRepo.url)} onerror={handleAvatarError} alt="" style="width: 64px; height: 64px; border-radius: 16px; border: 1px solid var(--glass-border);" />
-            <div>
-              <div style="display: flex; align-items: center; gap: 16px;">
-                <h2 style="margin: 0; font-size: 2.2rem; font-weight: 800;">{selectedRepo.name}</h2>
-                <div class="radial-timer" data-tooltip={getRemainingTime(selectedRepo)} style="width: 32px; height: 32px;">
-                  <svg width="32" height="32">
-                    <circle cx="16" cy="16" r="12" />
-                    <circle cx="16" cy="16" r="12" class="progress" class:active-pulse={selectedRepo.status !== 'syncing'}
-                      style="stroke-dasharray: 75; stroke-dashoffset: {75 - (selectedRepo.progress || 0) * 0.75}" />
-                  </svg>
-                </div>
-                <div class="badge" style="color: {selectedRepo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; background: rgba(255,255,255,0.03); font-size: 0.8rem; padding: 4px 12px; border: 1px solid rgba(255,255,255,0.05);">
-                  {selectedRepo.health_score}% HEALTH
-                </div>
-              </div>
-              <a href={selectedRepo.url} target="_blank" rel="noopener noreferrer" style="color: var(--efinity-blue); text-decoration: none; font-family: monospace; font-size: 0.95rem; display: block; margin-top: 8px;">
-                {selectedRepo.url} ↗
-              </a>
-            </div>
-          </div>
-          <button class="secondary" onclick={() => selectedRepo = null}>CLOSE</button>
-        </div>
-      </div>
-      <div class="modal-body">
-        <div class="readme-container" class:readme-expanded={readmeExpanded}>
-          <div style="max-height: {readmeExpanded ? 'none' : '300px'}; overflow: hidden;">
-            <div class="readme-content">
-              {@html readmeContent}
-            </div>
-          </div>
-          {#if !readmeExpanded}
-            <div class="readme-fade">
-              <button class="secondary" style="font-size: 0.65rem; padding: 12px 24px;" onclick={() => readmeExpanded = true}>READ FULL MISSION BRIEFING</button>
-            </div>
-          {/if}
-        </div>
-
-        <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.75rem; font-weight: 800; margin-top: 48px; margin-bottom: 24px;">Recent Mission Logs</h4>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          {#each parseCommits(selectedRepo.last_commit) as commit}
-            <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                {#if commit.branch}
-                  <span class="branch-badge">{commit.branch}</span>
-                {/if}
-                <span style="font-weight: 600; font-size: 1rem;">{commit.message}</span>
-              </div>
-              <div style="font-size: 0.8rem; color: var(--efinity-text-muted); font-weight: 500;">{commit.author} • {commit.date} • <span style="color: var(--efinity-blue); font-family: monospace;">{commit.hash.substring(0,7)}</span></div>
-            </div>
-          {/each}
-        </div>
-        <div style="margin-top: 48px; border-top: 1px solid var(--glass-border); padding-top: 32px;">
-          <h4 style="color: var(--status-red); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em; margin-bottom: 16px; font-weight: 800;">Danger Zone</h4>
-          <button style="width: 100%; background: rgba(255,77,77,0.05); color: var(--status-red); border: 1px solid rgba(255,77,77,0.15); box-shadow: none;" onclick={() => deleteRepo(selectedRepo!.id)}>TERMINATE PATROL</button>
-        </div>
-      </div>
-    </div>
-  </div>
-{/if}
-
-{#if showAddModal}
-  <div class="modal-overlay" onclick={() => showAddModal = false}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()} style="max-width: 540px;">
-      <div class="modal-header">
-        <h2 style="margin: 0; font-size: 1.8rem; font-weight: 800;">Deploy New Patrol</h2>
-        <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-size: 0.9rem;">Configure a new asset for monitoring.</p>
-      </div>
-      <div class="modal-body">
-        <label>DISPLAY NAME</label>
-        <input bind:value={newName} placeholder="e.g. efinity-frontend" />
-        <label>REPOSITORY URL</label>
-        <input bind:value={newUrl} placeholder="https://github.com/..." />
-        <label>SYNC INTERVAL (MINUTES)</label>
-        <input type="number" bind:value={interval} />
-        <div style="display: flex; gap: 16px; margin-top: 12px;">
-          <button style="flex: 2;" onclick={addRepo}>ACTIVATE</button>
-          <button class="secondary" style="flex: 1;" onclick={() => showAddModal = false}>CANCEL</button>
-        </div>
-      </div>
-    </div>
-  </div>
-{/if}
