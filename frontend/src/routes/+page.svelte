@@ -238,9 +238,26 @@
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <h2 style="margin: 0; font-size: 2.2rem; font-weight: 800;">{selectedRepo.name}</h2>
-            <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-family: monospace; font-size: 0.9rem;">{selectedRepo.url}</p>
+          <div style="display: flex; align-items: center; gap: 24px;">
+            <img src={getAvatarUrl(selectedRepo.url)} onerror={handleAvatarError} alt="" style="width: 64px; height: 64px; border-radius: 16px; border: 1px solid var(--glass-border);" />
+            <div>
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <h2 style="margin: 0; font-size: 2.2rem; font-weight: 800;">{selectedRepo.name}</h2>
+                <div class="radial-timer" data-tooltip={getRemainingTime(selectedRepo)} style="width: 32px; height: 32px;">
+                  <svg width="32" height="32">
+                    <circle cx="16" cy="16" r="12" />
+                    <circle cx="16" cy="16" r="12" class="progress" class:active-pulse={selectedRepo.status !== 'syncing'}
+                      style="stroke-dasharray: 75; stroke-dashoffset: {75 - (selectedRepo.progress || 0) * 0.75}" />
+                  </svg>
+                </div>
+                <div class="badge" style="color: {selectedRepo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; background: rgba(255,255,255,0.03); font-size: 0.8rem; padding: 4px 12px; border: 1px solid rgba(255,255,255,0.05);">
+                  {selectedRepo.health_score}% HEALTH
+                </div>
+              </div>
+              <a href={selectedRepo.url} target="_blank" rel="noopener noreferrer" style="color: var(--efinity-blue); text-decoration: none; font-family: monospace; font-size: 0.95rem; display: block; margin-top: 8px;">
+                {selectedRepo.url} ↗
+              </a>
+            </div>
           </div>
           <button class="secondary" onclick={() => selectedRepo = null}>CLOSE</button>
         </div>
