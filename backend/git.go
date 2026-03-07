@@ -103,6 +103,12 @@ func syncRepo(id int, url, name string) {
 	
 	score := calculateHealthScore(meta, history, lastCommitTime)
 
+	// Get default branch name
+	branchCmd := exec.Command("git", "-C", repoPath, "rev-parse", "--abbrev-ref", "HEAD")
+	branchOut, _ := branchCmd.CombinedOutput()
+	defaultBranch := strings.TrimSpace(string(branchOut))
+	if defaultBranch == "" { defaultBranch = "main" }
+
 	db.Exec(`UPDATE repositories SET 
 		status = 'synced', 
 		last_sync = ?, 
@@ -112,9 +118,10 @@ func syncRepo(id int, url, name string) {
 		open_issues = ?, 
 		commit_history = ?, 
 		health_score = ?,
+		default_branch = ?,
 		error_message = '' 
 		WHERE id = ?`, 
-		time.Now(), lastCommits, meta.StargazersCount, meta.ForksCount, meta.OpenIssuesCount, history, score, id)
+		time.Now(), lastCommits, meta.StargazersCount, meta.ForksCount, meta.OpenIssuesCount, history, score, defaultBranch, id)
 	
 	broadcastStatus(id, "synced", "")
 }

@@ -17,7 +17,6 @@ func initDB() {
 		log.Fatal(err)
 	}
 
-	// Create table if not exists
 	createTable := `
 	CREATE TABLE IF NOT EXISTS repositories (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,7 +26,13 @@ func initDB() {
 		last_sync TIMESTAMP,
 		status TEXT DEFAULT 'pending',
 		last_commit TEXT,
-		error_message TEXT
+		error_message TEXT,
+		stars INTEGER DEFAULT 0,
+		forks INTEGER DEFAULT 0,
+		open_issues INTEGER DEFAULT 0,
+		commit_history TEXT,
+		health_score INTEGER DEFAULT 0,
+		default_branch TEXT DEFAULT 'main'
 	);`
 
 	_, err = db.Exec(createTable)
@@ -35,10 +40,11 @@ func initDB() {
 		log.Fatal(err)
 	}
 
-	// Migrations for new columns (ignoring errors if they already exist)
+	// Migrations
 	db.Exec("ALTER TABLE repositories ADD COLUMN stars INTEGER DEFAULT 0")
 	db.Exec("ALTER TABLE repositories ADD COLUMN forks INTEGER DEFAULT 0")
 	db.Exec("ALTER TABLE repositories ADD COLUMN open_issues INTEGER DEFAULT 0")
 	db.Exec("ALTER TABLE repositories ADD COLUMN commit_history TEXT")
 	db.Exec("ALTER TABLE repositories ADD COLUMN health_score INTEGER DEFAULT 0")
+	db.Exec("ALTER TABLE repositories ADD COLUMN default_branch TEXT DEFAULT 'main'")
 }

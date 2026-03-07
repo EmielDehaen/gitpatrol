@@ -74,10 +74,8 @@ type Repository struct {
 	CommitHistory   string `json:"commit_history"`
 	HealthScore     int    `json:"health_score"`
 	DefaultBranch   string `json:"default_branch"`
-}
-
 func getRepositories(c echo.Context) error {
-	rows, err := db.Query("SELECT id, name, url, interval_minutes, last_sync, status, last_commit, error_message, stars, forks, open_issues, commit_history, health_score FROM repositories")
+	rows, err := db.Query("SELECT id, name, url, interval_minutes, last_sync, status, last_commit, error_message, stars, forks, open_issues, commit_history, health_score, default_branch FROM repositories")
 	if err != nil {
 		return err
 	}
@@ -87,10 +85,14 @@ func getRepositories(c echo.Context) error {
 	for rows.Next() {
 		var r Repository
 		var lastSync sql.NullString
-		rows.Scan(&r.ID, &r.Name, &r.URL, &r.IntervalMinutes, &lastSync, &r.Status, &r.LastCommit, &r.ErrorMessage, &r.Stars, &r.Forks, &r.OpenIssues, &r.CommitHistory, &r.HealthScore)
+		rows.Scan(&r.ID, &r.Name, &r.URL, &r.IntervalMinutes, &lastSync, &r.Status, &r.LastCommit, &r.ErrorMessage, &r.Stars, &r.Forks, &r.OpenIssues, &r.CommitHistory, &r.HealthScore, &r.DefaultBranch)
 		r.LastSync = lastSync.String
-		
-		// Get default branch name from git
+
+		repos = append(repos, r)
+	}
+	return c.JSON(http.StatusOK, repos)
+}
+
 		repoPath := filepath.Join("./data", r.Name)
 		cmd := exec.Command("git", "-C", repoPath, "rev-parse", "--abbrev-ref", "HEAD")
 		out, _ := cmd.CombinedOutput()
