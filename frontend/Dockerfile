@@ -1,5 +1,5 @@
 # Frontend Dockerfile
-FROM oven/bun:latest as builder
+FROM oven/bun:latest AS builder
 WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install
