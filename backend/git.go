@@ -97,9 +97,36 @@ func calculateHealthScore(meta GitHubMeta, historyStr string, lastCommitDate tim
 	return score
 }
 
+func downloadAvatar(url string, username string) error {
+	avatarPath := filepath.Join("./data/avatars", username+".png")
+	os.MkdirAll("./data/avatars", 0755)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	out, err := os.Create(avatarPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
 func syncRepo(id int, url, name string) {
 	updateStatus(id, "syncing", "")
 	
+	// Extract username for avatar
+	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
+	username := ""
+	if len(parts) >= 2 {
+		username = parts[len(parts)-2]
+	}
+
 	repoPath := filepath.Join("./data", name)
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		cmd := exec.Command("git", "clone", "--mirror", url, repoPath)
@@ -117,6 +144,13 @@ func syncRepo(id int, url, name string) {
 
 	// Enrich with GitHub Meta
 	meta, _ := fetchGitHubMeta(url)
+	
+	// Download avatar locally
+	if username != "" {
+		avatarURL := fmt.Sprintf("https://github.com/%s.png?size=100", username)
+		downloadAvatar(avatarURL, username)
+	}
+
 	history := getCommitHistory(repoPath)
 	lastCommits := getLastCommits(repoPath)
 	

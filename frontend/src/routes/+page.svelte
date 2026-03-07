@@ -94,7 +94,8 @@
     // Extract user from https://github.com/user/repo
     const parts = url.replace('https://github.com/', '').split('/');
     if (parts.length > 0) {
-      return `https://github.com/${parts[0]}.png?size=100`;
+      const username = parts[0];
+      return `${API_URL}/avatars/${username}.png`;
     }
     return '';
   }
