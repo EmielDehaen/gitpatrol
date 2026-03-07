@@ -58,7 +58,21 @@
     const nextSync = lastSync + repo.interval_minutes * 60000;
     const total = repo.interval_minutes * 60000;
     const remaining = nextSync - Date.now();
-    return Math.max(0, Math.min(100, (remaining / total) * 100));
+    if (remaining <= 0) return 0;
+    // Calculation for SVG stroke-dashoffset (Circle radius is 16, circumference is ~100)
+    const percentage = remaining / total;
+    return 100 * percentage;
+  }
+
+  function getRemainingTime(repo: Repository) {
+    if (!repo.last_sync || repo.status === 'syncing') return 'Syncing...';
+    const lastSync = new Date(repo.last_sync).getTime();
+    const nextSync = lastSync + repo.interval_minutes * 60000;
+    const remaining = nextSync - Date.now();
+    if (remaining <= 0) return 'Syncing...';
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    return `Next sync in: ${mins}m ${secs}s`;
   }
 
   function parseCommits(lastCommit: string) {
@@ -111,14 +125,14 @@
       {#each repositories as repo (repo.id)}
         <div class="card" onclick={() => selectedRepo = repo}>
           <div style="position: absolute; top: 32px; right: 32px; display: flex; align-items: center; gap: 16px;">
-            <div class="radial-timer">
+            <div class="radial-timer" title={getRemainingTime(repo)}>
               <svg width="40" height="40">
                 <circle cx="20" cy="20" r="16" />
-                <circle cx="20" cy="20" r="16" class="progress" 
-                  style="stroke-dasharray: 100; stroke-dashoffset: {repo.progress}" />
+                <circle cx="20" cy="20" r="16" class="progress" class:active-pulse={repo.status !== 'syncing'}
+                  style="stroke-dasharray: 100; stroke-dashoffset: {100 - (repo.progress || 0)}" />
               </svg>
             </div>
-            <div class="health-score" style="color: {repo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; border-color: rgba(255,255,255,0.05);">
+            <div class="health-score" style="color: {repo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}44">
               {repo.health_score}
             </div>
           </div>
