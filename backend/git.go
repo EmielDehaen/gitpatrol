@@ -167,7 +167,19 @@ func updateStatus(id int, status, errMsg string) {
 	if status == "error" {
 		var repoName string
 		db.QueryRow("SELECT name FROM repositories WHERE id = ?", id).Scan(&repoName)
-		db.Exec("INSERT INTO incidents (repo_id, repo_name, message, created_at) VALUES (?, ?, ?, ?)", id, repoName, errMsg, time.Now())
+
+		// 1. Permanent Failure Handling: If repo is not found, disable auto patrol
+		if strings.Contains(strings.ToLower(errMsg), "not found") {
+			db.Exec("UPDATE repositories SET auto_patrol = 0 WHERE id = ?", id)
+			log.Printf("[SYNC] Disabled auto_patrol for %s due to permanent failure: %s", repoName, errMsg)
+		}
+
+		// 2. Incident Deduplication: Only insert if the last unresolved incident for this repo is different
+		var lastMessage string
+		err := db.QueryRow("SELECT message FROM incidents WHERE repo_id = ? AND resolved = 0 ORDER BY created_at DESC LIMIT 1", id).Scan(&lastMessage)
+		if err != nil || lastMessage != errMsg {
+			db.Exec("INSERT INTO incidents (repo_id, repo_name, message, created_at) VALUES (?, ?, ?, ?)", id, repoName, errMsg, time.Now())
+		}
 	}
 	
 	broadcastStatus(id, status, errMsg)

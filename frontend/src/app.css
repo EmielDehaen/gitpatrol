@@ -423,7 +423,7 @@ button.secondary:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
 .notification-bell.has-incidents {
   color: var(--status-red);
   border-color: rgba(255, 77, 77, 0.2);
-  animation: bell-shake 2s infinite;
+  animation: bell-shake 0.5s ease-in-out 3; /* Shakes 3 times then stops */
 }
 
 .bell-count {
