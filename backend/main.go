@@ -26,6 +26,7 @@ func main() {
 	e.POST("/api/repositories", addRepository)
 	e.PATCH("/api/repositories/:id", updateRepository)
 	e.DELETE("/api/repositories/:id", deleteRepository)
+	e.POST("/api/repositories/:id/sync", syncRepositoryNow)
 	e.GET("/api/repositories/:id/readme", getReadme)
 	e.Static("/avatars", "./data/avatars")
 
