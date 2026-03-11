@@ -40,6 +40,13 @@
   let incidents = $state<any[]>([]);
   let showIncidentModal = $state(false);
 
+  // Auth State
+  let isAuthenticated = $state(false);
+  let needsBootstrap = $state(false);
+  let authUsername = $state('');
+  let authPassword = $state('');
+  let authLoading = $state(true);
+
   interface Toast { id: number; message: string; type: 'success' | 'error' | 'info'; }
   let toasts = $state<Toast[]>([]);
   let toastId = 0;
@@ -83,6 +90,49 @@
 
   const API_URL = 'http://localhost:8080';
 
+  async function checkAuth() {
+    try {
+      const res = await fetch(`${API_URL}/api/auth/status`, { credentials: 'include' });
+      const data = await res.json();
+      needsBootstrap = data.needs_bootstrap;
+      isAuthenticated = data.logged_in;
+      if (isAuthenticated) {
+        fetchRepos();
+        fetchIncidents();
+      }
+    } catch (e) {
+      console.error('Auth check failed', e);
+    } finally {
+      authLoading = false;
+    }
+  }
+
+  async function handleAuth() {
+    const endpoint = needsBootstrap ? '/api/auth/register' : '/api/auth/login';
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: authUsername, password: authPassword }),
+      credentials: 'include'
+    });
+    
+    if (res.ok) {
+      authUsername = ''; authPassword = '';
+      showToast(needsBootstrap ? 'System bootstrapped!' : 'Welcome back.', 'success');
+      await checkAuth();
+    } else {
+      const data = await res.json();
+      showToast(data.error || 'Authentication failed.', 'error');
+    }
+  }
+
+  async function handleLogout() {
+    await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+    isAuthenticated = false;
+    repositories = [];
+    showToast('Logged out.', 'info');
+  }
+
   function minutesToHuman(minutes: number): string {
     if (minutes <= 0) return '0m';
     const d = Math.floor(minutes / 1440);
@@ -110,19 +160,22 @@
   }
 
   async function fetchRepos() {
-    const res = await fetch(`${API_URL}/api/repositories`);
-    if (!res.ok) return;
+    const res = await fetch(`${API_URL}/api/repositories`, { credentials: 'include' });
+    if (!res.ok) {
+      if (res.status === 401) isAuthenticated = false;
+      return;
+    }
     repositories = await res.json();
   }
 
   async function fetchIncidents() {
-    const res = await fetch(`${API_URL}/api/incidents`);
+    const res = await fetch(`${API_URL}/api/incidents`, { credentials: 'include' });
     if (!res.ok) return;
     incidents = await res.json();
   }
 
   async function clearIncidents() {
-    const res = await fetch(`${API_URL}/api/incidents`, { method: 'DELETE' });
+    const res = await fetch(`${API_URL}/api/incidents`, { method: 'DELETE', credentials: 'include' });
     if (res.ok) {
       incidents = [];
       showIncidentModal = false;
@@ -134,15 +187,15 @@
     const assetBase = `${API_URL}/api/repositories/${repo.id}/assets/`;
     
     // Fetch Issues
-    const issuesRes = await fetch(`${assetBase}metadata/issues.json`);
+    const issuesRes = await fetch(`${assetBase}metadata/issues.json`, { credentials: 'include' });
     issues = issuesRes.ok ? await issuesRes.json() : [];
 
     // Fetch Releases
-    const releasesRes = await fetch(`${assetBase}metadata/releases.json`);
+    const releasesRes = await fetch(`${assetBase}metadata/releases.json`, { credentials: 'include' });
     releases = releasesRes.ok ? await releasesRes.json() : [];
 
     // Fetch Wiki (Try Home.md)
-    const wikiRes = await fetch(`${assetBase}wiki/Home.md`);
+    const wikiRes = await fetch(`${assetBase}wiki/Home.md`, { credentials: 'include' });
     if (wikiRes.ok) {
       wikiContent = await marked.parse(await wikiRes.text());
     } else {
@@ -154,7 +207,7 @@
     readmeContent = 'Loading mission briefing...';
     readmeExpanded = false;
     activeTab = 'readme';
-    const res = await fetch(`${API_URL}/api/repositories/${repo.id}/readme`);
+    const res = await fetch(`${API_URL}/api/repositories/${repo.id}/readme`, { credentials: 'include' });
     if (res.ok) {
       let text = await res.text();
       const assetBase = `${API_URL}/api/repositories/${repo.id}/assets/`;
@@ -183,7 +236,8 @@
         url: newUrl, 
         interval_minutes: humanToMinutes(intervalString), 
         auto_patrol: autoPatrol ? 1 : 0 
-      })
+      }),
+      credentials: 'include'
     });
     if (res.ok) {
       newName = ''; newUrl = ''; autoPatrol = true; intervalString = '1h'; showAddModal = false; fetchRepos();
@@ -196,7 +250,7 @@
 
   async function deleteRepo(id: number) {
     if (!confirm('Are you sure you want to terminate this patrol?')) return;
-    const res = await fetch(`${API_URL}/api/repositories/${id}`, { method: 'DELETE' });
+    const res = await fetch(`${API_URL}/api/repositories/${id}`, { method: 'DELETE', credentials: 'include' });
     if (res.ok) { 
       selectedRepo = null; showConfigModal = false; fetchRepos(); 
       showToast('Patrol terminated.', 'info');
@@ -211,7 +265,8 @@
       body: JSON.stringify({ 
         interval_minutes: humanToMinutes(intervalString), 
         auto_patrol: selectedRepo.auto_patrol 
-      })
+      }),
+      credentials: 'include'
     });
     if (res.ok) { 
       await fetchRepos();
@@ -224,7 +279,7 @@
   }
 
   async function syncRepoNow(repo: Repository) {
-    await fetch(`${API_URL}/api/repositories/${repo.id}/sync`, { method: 'POST' });
+    await fetch(`${API_URL}/api/repositories/${repo.id}/sync`, { method: 'POST', credentials: 'include' });
   }
 
   function openConfig() {
@@ -254,27 +309,28 @@
 
   function getRemainingTime(repo: Repository) {
     if (repo.auto_patrol === 0) return 'Manual Patrol Only';
-    if (!repo.last_sync || repo.status === 'syncing') return 'Syncing...';
+    if (repo.status === 'syncing' || isSyncing(repo)) return 'Syncing...';
+    if (!repo.last_sync) return 'Pending first patrol';
     const lastSync = new Date(repo.last_sync).getTime();
     const nextSync = lastSync + repo.interval_minutes * 60000;
     const remaining = nextSync - Date.now();
     if (remaining <= 0) return 'Syncing...';
-    const mins = Math.floor(remaining / 60000);
-    const secs = Math.floor((remaining % 60000) / 1000);
-    return `Next sync in: ${mins}m ${secs}s`;
+    
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+    return `Next patrol in ${minutes}m ${seconds}s`;
   }
 
-  function parseCommits(lastCommit: string) {
-    if (!lastCommit) return [];
-    return lastCommit.trim().split('\n').map(line => {
+  function parseCommits(data: string) {
+    if (!data) return [];
+    return data.split('\n').map(line => {
       const parts = line.split('|');
       if (parts.length < 4) return null;
       const refs = parts[4] || '';
       let branch = '';
       if (refs) {
         const cleanRefs = refs.replace(/[()]/g, '').split(', ');
-        const priorityRef = cleanRefs.find(r => !r.includes('HEAD') && !r.startsWith('tag:')) || cleanRefs[0];
-        branch = priorityRef?.split(' -> ').pop()?.replace('remotes/origin/', '').replace('origin/', '').trim() || '';
+        branch = cleanRefs.find(r => !r.includes('HEAD') && !r.includes('tag:')) || '';
       }
       return { hash: parts[0], author: parts[1], date: parts[2], message: parts[3], branch };
     }).filter(c => c !== null);
@@ -282,37 +338,71 @@
 
   function handleAvatarError(e: Event) {
     const img = e.target as HTMLImageElement;
-    img.src = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
+    img.src = `https://ui-avatars.com/api/?name=GP&background=0070f3&color=fff`;
   }
 
   function getAvatarUrl(url: string) {
-    const parts = url.replace('https://github.com/', '').split('/');
+    const parts = url.replace('https://github.com/', '').replace('https://gitlab.com/', '').split('/');
     if (parts.length > 0) return `${API_URL}/avatars/${parts[0]}.png`;
     return '';
   }
 
   onMount(() => {
-    fetchRepos();
-    fetchIncidents();
+    checkAuth();
     const ws = new WebSocket('ws://localhost:8080/ws');
     ws.onmessage = () => {
-      fetchRepos();
-      fetchIncidents();
+      if (isAuthenticated) {
+        fetchRepos();
+        fetchIncidents();
+      }
     };
     const timer = setInterval(() => {
-      repositories = repositories.map(r => ({ ...r, progress: getProgress(r) }));
+      if (isAuthenticated) {
+        repositories = repositories.map(r => ({ ...r, progress: getProgress(r) }));
+      }
     }, 1000);
     return () => clearInterval(timer);
   });
 </script>
 
-<div class="container">
+{#if authLoading}
+  <div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--efinity-dark);">
+    <div class="badge" style="color: var(--efinity-blue); background: rgba(0, 112, 243, 0.05); padding: 12px 24px;">ESTABLISHING NEURAL LINK...</div>
+  </div>
+{:else if !isAuthenticated}
+  <div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--efinity-dark);">
+    <div class="modal-content" style="max-width: 400px; padding: 48px; border: 1px solid var(--glass-border);" transition:fade>
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="font-size: 2.5rem; margin: 0;">GitPatrol ⚡</h1>
+        <p style="color: var(--efinity-text-muted); margin-top: 8px;">{needsBootstrap ? 'System Initial Setup' : 'Tactical Access Required'}</p>
+      </div>
+      
+      <label>USERNAME</label>
+      <input bind:value={authUsername} placeholder="e.g. emiel" />
+      
+      <label>PASSWORD</label>
+      <input type="password" bind:value={authPassword} placeholder="••••••••" onkeydown={(e) => e.key === 'Enter' && handleAuth()} />
+      
+      <button style="width: 100%; margin-top: 32px;" onclick={handleAuth}>
+        {needsBootstrap ? 'BOOTSTRAP SYSTEM' : 'ACCESS DASHBOARD'}
+      </button>
+      
+      {#if !needsBootstrap}
+        <p style="text-align: center; font-size: 0.75rem; color: var(--efinity-text-muted); margin-top: 24px;">
+          Contact your administrator for access.
+        </p>
+      {/if}
+    </div>
+  </div>
+{:else}
+<div class="container" transition:fade>
   <header>
     <div>
       <h1>GitPatrol ⚡</h1>
       <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em;">Tactical Asset Monitoring</p>
     </div>
     <div style="display: flex; gap: 24px; align-items: center;">
+      <button class="secondary" style="font-size: 0.65rem; padding: 10px 16px;" onclick={handleLogout}>LOGOUT</button>
       <div class="notification-bell" class:has-incidents={incidents.length > 0} onclick={() => showIncidentModal = true} data-tooltip="Security Logs">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         {#if incidents.length > 0}<div class="bell-count">{incidents.length}</div>{/if}
@@ -327,6 +417,15 @@
       </div>
     </div>
   </header>
+
+  <main>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 48px;">
+      <div>
+        <h2 style="margin: 0; font-size: 2.2rem; font-weight: 800;">Insured Assets</h2>
+        <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0;">Monitoring {repositories.length} active sectors.</p>
+      </div>
+      <button onclick={() => showAddModal = true}>+ DEPLOY NEW PATROL</button>
+    </div>
 
   {#if viewMode === 'grid'}
     <div class="repo-grid">
@@ -344,30 +443,28 @@
               {repo.health_score}
             </div>
           </div>
-          <div class="card-header">
-            <div style="display: flex; gap: 16px; align-items: flex-start;">
-              <img src={getAvatarUrl(repo.url)} onerror={handleAvatarError} alt="" style="width: 44px; height: 44px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-border);" />
-              <div>
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
-                  <h3 class="repo-name" style="margin: 0;">{repo.name}</h3>
-                  {#if repo.status === 'synced'}
+          
+          <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 32px;">
+            <img src={getAvatarUrl(repo.url)} onerror={handleAvatarError} alt="" style="width: 48px; height: 48px; border-radius: 12px; border: 1px solid var(--glass-border);" />
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="font-weight: 800; font-size: 1.2rem; color: #fff;">{repo.name}</div>
+                {#if repo.status === 'synced'}
                     <span class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); font-size: 0.6rem; padding: 2px 8px;">SYNCED</span>
                   {:else if repo.status === 'error'}
                     <span class="badge" style="color: var(--status-red); background: rgba(255, 77, 77, 0.05); font-size: 0.6rem; padding: 2px 8px;">ERROR</span>
                   {/if}
-                </div>
-                <div class="repo-url">{repo.url.replace('https://github.com/', '')}</div>
               </div>
+              <div class="repo-url">{repo.url.replace('https://github.com/', '')}</div>
             </div>
           </div>
-          <div class="stats-row">
-            <div class="stat-item" data-tooltip="GitHub Stars"><svg width="14" height="14" viewBox="0 0 24 24" fill="var(--status-yellow)" style="opacity: 0.8;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><b>{repo.stars}</b></div>
-            <div class="stat-item" data-tooltip="Open Issues"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><b>{repo.open_issues}</b></div>
-          </div>
-          <div class="mini-chart">
-            {#each JSON.parse(repo.commit_history || '[]') as count}
-              <div class="chart-bar" style="height: {count === 0 ? '4px' : Math.min(100, (count / 10) * 100)}%; background: {count === 0 ? 'rgba(255,255,255,0.05)' : `rgba(0, 112, 243, ${0.3 + (Math.min(count, 10) / 10) * 0.7})`}; box-shadow: {count > 5 ? `0 0 12px rgba(0, 112, 243, ${(Math.min(count, 10) / 10) * 0.4})` : 'none'};" data-tooltip="{count} commits"></div>
-            {/each}
+
+          <div style="height: 40px; display: flex; align-items: flex-end; gap: 3px;">
+            {#if repo.commit_history}
+              {#each JSON.parse(repo.commit_history) as count}
+                <div class="history-bar" style="height: {Math.min(100, count * 20)}%; opacity: {count > 0 ? 1 : 0.2};"></div>
+              {/each}
+            {/if}
           </div>
         </div>
       {/each}
@@ -391,25 +488,22 @@
             </div>
           </div>
           <div style="display: flex; gap: 40px; align-items: center;">
-            <div class="stat-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--status-yellow)"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><b>{repo.stars}</b></div>
-            <div class="stat-item"><b>{repo.health_score}</b> Health</div>
-            <div class="badge" style="color: {repo.status === 'synced' ? 'var(--status-green)' : '#fff'}">{repo.status}</div>
+            <div style="text-align: right;"><div style="font-size: 0.65rem; color: var(--efinity-text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 4px;">Health</div><div style="font-weight: 800; color: {repo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'};">{repo.health_score}%</div></div>
+            <div style="text-align: right;"><div style="font-size: 0.65rem; color: var(--efinity-text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 4px;">Last Sync</div><div style="font-weight: 800;">{repo.last_sync ? new Date(repo.last_sync).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Never'}</div></div>
           </div>
         </div>
       {/each}
     </div>
   {/if}
+  </main>
 </div>
-
-<div class="fab" onclick={() => showAddModal = true}>
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-</div>
+{/if}
 
 {#if selectedRepo}
-  <div class="modal-overlay" onclick={() => { selectedRepo = null; showConfig = false; }}>
+  <div class="modal-overlay" onclick={() => { selectedRepo = null; showConfigModal = false; }}>
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px;">
           <div style="display: flex; align-items: center; gap: 24px;">
             <img src={getAvatarUrl(selectedRepo.url)} onerror={handleAvatarError} alt="" style="width: 64px; height: 64px; border-radius: 16px; border: 1px solid var(--glass-border);" />
             <div>
@@ -531,7 +625,7 @@
           <label>SYNC INTERVAL (e.g. 1h 30m, 1d 2h)</label>
           <input type="text" bind:value={intervalString} placeholder="1h" />
         {:else}
-          <div style="padding: 16px; background: rgba(255, 77, 77, 0.05); border-radius: 12px; color: var(--status-red); font-size: 0.8rem; border: 1px solid rgba(255, 77, 77, 0.1); margin-bottom: 24px;">
+          <div style="padding: 16px; background: rgba(255, 77, 77, 0.05); border: 1px solid rgba(255, 77, 77, 0.1); border-radius: 12px; color: var(--status-red); font-size: 0.8rem; margin-bottom: 24px;">
             ⚠️ Automated patrolling is disabled for this asset.
           </div>
         {/if}
