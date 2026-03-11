@@ -85,12 +85,15 @@ func getRepositories(c echo.Context) error {
 	repos := []Repository{}
 	for rows.Next() {
 		var r Repository
-		var lastSync sql.NullString
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.IntervalMinutes, &lastSync, &r.Status, &r.LastCommit, &r.ErrorMessage, &r.Stars, &r.Forks, &r.OpenIssues, &r.CommitHistory, &r.HealthScore, &r.DefaultBranch, &r.AutoPatrol)
+		var lastSync, lastCommit, errMsg, commitHistory sql.NullString
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.IntervalMinutes, &lastSync, &r.Status, &lastCommit, &errMsg, &r.Stars, &r.Forks, &r.OpenIssues, &commitHistory, &r.HealthScore, &r.DefaultBranch, &r.AutoPatrol)
 		if err != nil {
 			return err
 		}
 		r.LastSync = lastSync.String
+		r.LastCommit = lastCommit.String
+		r.ErrorMessage = errMsg.String
+		r.CommitHistory = commitHistory.String
 		repos = append(repos, r)
 	}
 	return c.JSON(http.StatusOK, repos)
