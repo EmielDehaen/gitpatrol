@@ -20,6 +20,9 @@ type Metadata struct {
 
 type Source interface {
 	GetMetadata(url string) (Metadata, error)
+	GetWikiURL(url string) (string, bool)
+	SyncIssues(url string, destPath string) error
+	SyncReleases(url string, destPath string) error
 }
 
 type GitHubSource struct{}
@@ -60,6 +63,54 @@ func (s *GitHubSource) GetMetadata(url string) (Metadata, error) {
 	}, nil
 }
 
+func (s *GitHubSource) GetWikiURL(url string) (string, bool) {
+	// GitHub Wikis are always at .wiki.git
+	wikiURL := strings.TrimSuffix(url, ".git") + ".wiki.git"
+	return wikiURL, true
+}
+
+func (s *GitHubSource) SyncIssues(url string, destPath string) error {
+	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
+	if len(parts) < 2 { return fmt.Errorf("invalid URL") }
+	repoPath := parts[len(parts)-2] + "/" + parts[len(parts)-1]
+	
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/issues?state=all&per_page=100", repoPath)
+	resp, err := http.Get(apiURL)
+	if err != nil { return err }
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 { return fmt.Errorf("GitHub API returned %d", resp.StatusCode) }
+
+	os.MkdirAll(destPath, 0755)
+	outFile, err := os.Create(filepath.Join(destPath, "issues.json"))
+	if err != nil { return err }
+	defer outFile.Close()
+
+	_, err = io.Copy(outFile, resp.Body)
+	return err
+}
+
+func (s *GitHubSource) SyncReleases(url string, destPath string) error {
+	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
+	if len(parts) < 2 { return fmt.Errorf("invalid URL") }
+	repoPath := parts[len(parts)-2] + "/" + parts[len(parts)-1]
+	
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/releases?per_page=100", repoPath)
+	resp, err := http.Get(apiURL)
+	if err != nil { return err }
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 { return fmt.Errorf("GitHub API returned %d", resp.StatusCode) }
+
+	os.MkdirAll(destPath, 0755)
+	outFile, err := os.Create(filepath.Join(destPath, "releases.json"))
+	if err != nil { return err }
+	defer outFile.Close()
+
+	_, err = io.Copy(outFile, resp.Body)
+	return err
+}
+
 type GitLabSource struct{}
 
 func (s *GitLabSource) GetMetadata(url string) (Metadata, error) {
@@ -72,6 +123,10 @@ func (s *GitLabSource) GetMetadata(url string) (Metadata, error) {
 		Username:   "",
 	}, nil
 }
+
+func (s *GitLabSource) GetWikiURL(url string) (string, bool) { return "", false }
+func (s *GitLabSource) SyncIssues(url string, destPath string) error { return nil }
+func (s *GitLabSource) SyncReleases(url string, destPath string) error { return nil }
 
 func GetSource(url string) (Source, error) {
 	if strings.Contains(url, "github.com") {

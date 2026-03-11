@@ -24,8 +24,12 @@
   let repositories = $state<Repository[]>([]);
   let viewMode = $state<'grid' | 'list'>('grid');
   let selectedRepo = $state<Repository | null>(null);
+  let activeTab = $state<'readme' | 'issues' | 'releases' | 'wiki' | 'logs'>('readme');
   let showConfigModal = $state(false);
   let readmeContent = $state('');
+  let wikiContent = $state('');
+  let issues = $state<any[]>([]);
+  let releases = $state<any[]>([]);
   let readmeExpanded = $state(false);
   let showAddModal = $state(false);
   let newName = $state('');
@@ -67,9 +71,30 @@
     repositories = await res.json();
   }
 
+  async function fetchMetadata(repo: Repository) {
+    const assetBase = `${API_URL}/api/repositories/${repo.id}/assets/`;
+    
+    // Fetch Issues
+    const issuesRes = await fetch(`${assetBase}metadata/issues.json`);
+    issues = issuesRes.ok ? await issuesRes.json() : [];
+
+    // Fetch Releases
+    const releasesRes = await fetch(`${assetBase}metadata/releases.json`);
+    releases = releasesRes.ok ? await releasesRes.json() : [];
+
+    // Fetch Wiki (Try Home.md)
+    const wikiRes = await fetch(`${assetBase}wiki/Home.md`);
+    if (wikiRes.ok) {
+      wikiContent = await marked.parse(await wikiRes.text());
+    } else {
+      wikiContent = '<p style="color: var(--efinity-text-muted)">No documentation (Wiki) found for this asset.</p>';
+    }
+  }
+
   async function fetchReadme(repo: Repository) {
     readmeContent = 'Loading mission briefing...';
     readmeExpanded = false;
+    activeTab = 'readme';
     const res = await fetch(`${API_URL}/api/repositories/${repo.id}/readme`);
     if (res.ok) {
       let text = await res.text();
@@ -84,6 +109,7 @@
     } else {
       readmeContent = '<p style="color: var(--efinity-text-muted)">No mission briefing available for this asset.</p>';
     }
+    fetchMetadata(repo);
   }
 
   $effect(() => { if (selectedRepo) fetchReadme(selectedRepo); });
@@ -320,17 +346,71 @@
         </div>
       </div>
       <div class="modal-body">
-        <div class="readme-container" class:readme-expanded={readmeExpanded}>
-<div style="max-height: {readmeExpanded ? 'none' : '300px'}; overflow: hidden;"><div class="readme-content">{@html readmeContent}</div></div>{#if !readmeExpanded}<div class="readme-fade"><button class="secondary" style="font-size: 0.65rem; padding: 12px 24px;" onclick={() => readmeExpanded = true}>READ FULL MISSION BRIEFING</button></div>{/if}</div>
-        <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.75rem; font-weight: 800; margin-top: 48px; margin-bottom: 24px;">Recent Mission Logs</h4>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          {#each parseCommits(selectedRepo.last_commit) as commit}
-            <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">{#if commit.branch}<span class="branch-badge">{commit.branch}</span>{/if}<span style="font-weight: 600; font-size: 1rem;">{commit.message}</span></div>
-              <div style="font-size: 0.8rem; color: var(--efinity-text-muted); font-weight: 500;">{commit.author} • {commit.date} • <span style="color: var(--efinity-blue); font-family: monospace;">{commit.hash.substring(0,7)}</span></div>
-            </div>
-          {/each}
+        <div class="tab-container">
+          <button class="tab-btn" class:active={activeTab === 'readme'} onclick={() => activeTab = 'readme'}>BRIEFING</button>
+          <button class="tab-btn" class:active={activeTab === 'issues'} onclick={() => activeTab = 'issues'}>INTEL <span class="tab-count">{issues.length}</span></button>
+          <button class="tab-btn" class:active={activeTab === 'releases'} onclick={() => activeTab = 'releases'}>CHRONICLE <span class="tab-count">{releases.length}</span></button>
+          <button class="tab-btn" class:active={activeTab === 'wiki'} onclick={() => activeTab = 'wiki'}>WIKI</button>
+          <button class="tab-btn" class:active={activeTab === 'logs'} onclick={() => activeTab = 'logs'}>LOGS</button>
         </div>
+
+        {#if activeTab === 'readme'}
+          <div class="readme-container" class:readme-expanded={readmeExpanded}>
+            <div style="max-height: {readmeExpanded ? 'none' : '300px'}; overflow: hidden;">
+              <div class="readme-content">{@html readmeContent}</div>
+            </div>
+            {#if !readmeExpanded}
+              <div class="readme-fade">
+                <button class="secondary" style="font-size: 0.65rem; padding: 12px 24px;" onclick={() => readmeExpanded = true}>READ FULL MISSION BRIEFING</button>
+              </div>
+            {/if}
+          </div>
+        {:else if activeTab === 'issues'}
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            {#if issues.length === 0}
+              <p style="color: var(--efinity-text-muted)">No tactical issues found in this sector.</p>
+            {:else}
+              {#each issues as issue}
+                <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                    <div style="font-weight: 700; font-size: 1.1rem; color: #fff;">{issue.title}</div>
+                    <span class="badge" style="color: {issue.state === 'open' ? 'var(--status-green)' : 'var(--efinity-text-muted)'}; background: {issue.state === 'open' ? 'rgba(0, 255, 136, 0.05)' : 'rgba(255,255,255,0.03)'}">{issue.state.toUpperCase()}</span>
+                  </div>
+                  <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">#{issue.number} opened by {issue.user?.login} • {new Date(issue.created_at).toLocaleDateString()}</div>
+                </div>
+              {/each}
+            {/if}
+          </div>
+        {:else if activeTab === 'releases'}
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            {#if releases.length === 0}
+              <p style="color: var(--efinity-text-muted)">No historical chronicles (releases) found.</p>
+            {:else}
+              {#each releases as release}
+                <div style="background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid var(--glass-border); padding: 24px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--glass-border); padding-bottom: 16px;">
+                    <div>
+                      <div style="font-size: 1.4rem; font-weight: 800; color: var(--efinity-blue);">{release.tag_name}</div>
+                      <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">{release.name} • {new Date(release.published_at).toLocaleDateString()}</div>
+                    </div>
+                  </div>
+                  <div class="readme-content" style="font-size: 0.9rem;">{@html marked.parse(release.body || '')}</div>
+                </div>
+              {/each}
+            {/if}
+          </div>
+        {:else if activeTab === 'wiki'}
+          <div class="readme-content">{@html wikiContent}</div>
+        {:else if activeTab === 'logs'}
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            {#each parseCommits(selectedRepo.last_commit) as commit}
+              <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">{#if commit.branch}<span class="branch-badge">{commit.branch}</span>{/if}<span style="font-weight: 600; font-size: 1rem;">{commit.message}</span></div>
+                <div style="font-size: 0.8rem; color: var(--efinity-text-muted); font-weight: 500;">{commit.author} • {commit.date} • <span style="color: var(--efinity-blue); font-family: monospace;">{commit.hash.substring(0,7)}</span></div>
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
     </div>
   </div>
