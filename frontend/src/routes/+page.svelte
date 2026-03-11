@@ -340,7 +340,7 @@
 
   function parseHistory(history: string) {
     try {
-      if (!history || history === '[]') return Array(14).fill(0);
+      if (!history || history === '[]' || history === 'null') return Array(14).fill(0);
       const parsed = JSON.parse(history);
       return Array.isArray(parsed) ? parsed : Array(14).fill(0);
     } catch (e) { return Array(14).fill(0); }
@@ -394,7 +394,7 @@
     </div>
     <div style="display: flex; gap: 24px; align-items: center;">
       <div class="user-profile" onclick={() => showUserModal = true} data-tooltip="User Settings">
-        <div class="avatar-circle">{authUsername.charAt(0)}</div>
+        <div class="avatar-circle">{authUsername ? authUsername.charAt(0) : 'U'}</div>
         <div class="user-info">
           <span class="user-name">{authUsername}</span>
           <span class="user-role">Administrator</span>
@@ -447,9 +447,9 @@
               <div class="repo-url">{repo.url.replace('https://github.com/', '')}</div>
             </div>
           </div>
-          <div style="height: 40px; display: flex; align-items: flex-end; gap: 3px;">
+          <div class="history-container">
             {#each parseHistory(repo.commit_history) as count}
-              <div class="history-bar" style="height: {Math.min(100, count * 20)}%; opacity: {count > 0 ? 1 : 0.2};"></div>
+              <div class="history-bar" style="height: {Math.max(5, Math.min(100, count * 20))}%"></div>
             {/each}
           </div>
         </div>
