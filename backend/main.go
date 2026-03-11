@@ -43,27 +43,32 @@ func main() {
 	// Scheduler
 	go func() {
 		for {
-			rows, _ := db.Query("SELECT id, name, url, interval_minutes, last_sync FROM repositories WHERE auto_patrol = 1")
-			for rows.Next() {
-				var id int
-				var name, url string
-				var interval int
-				var lastSync sql.NullString
-				rows.Scan(&id, &name, &url, &interval, &lastSync)
-				
-				shouldSync := true
-				if lastSync.Valid {
-					t, _ := time.Parse(time.RFC3339, lastSync.String)
-					if time.Since(t) < time.Duration(interval)*time.Minute {
-						shouldSync = false
+			// Only pick repos that are NOT already syncing and have auto_patrol enabled
+			rows, _ := db.Query("SELECT id, name, url, interval_minutes, last_sync FROM repositories WHERE auto_patrol = 1 AND status != 'syncing'")
+			if rows != nil {
+				for rows.Next() {
+					var id int
+					var name, url string
+					var interval int
+					var lastSync sql.NullTime // Use NullTime for cleaner SQLite integration
+					
+					if err := rows.Scan(&id, &name, &url, &interval, &lastSync); err != nil {
+						continue
+					}
+					
+					shouldSync := true
+					if lastSync.Valid {
+						if time.Since(lastSync.Time) < time.Duration(interval)*time.Minute {
+							shouldSync = false
+						}
+					}
+					
+					if shouldSync {
+						go syncRepo(id, url, name)
 					}
 				}
-				
-				if shouldSync {
-					go syncRepo(id, url, name)
-				}
+				rows.Close()
 			}
-			rows.Close()
 			time.Sleep(1 * time.Minute)
 		}
 	}()
