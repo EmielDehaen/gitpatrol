@@ -158,6 +158,9 @@
     });
     if (res.ok) {
       newName = ''; newUrl = ''; autoPatrol = true; intervalString = '1h'; showAddModal = false; fetchRepos();
+    } else {
+      const err = await res.json();
+      alert(err.error || 'Failed to deploy patrol.');
     }
   }
 
@@ -297,6 +300,8 @@
                   <h3 class="repo-name" style="margin: 0;">{repo.name}</h3>
                   {#if repo.status === 'synced'}
                     <span class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); font-size: 0.6rem; padding: 2px 8px;">SYNCED</span>
+                  {:else if repo.status === 'error'}
+                    <span class="badge" style="color: var(--status-red); background: rgba(255, 77, 77, 0.05); font-size: 0.6rem; padding: 2px 8px;">ERROR</span>
                   {/if}
                 </div>
                 <div class="repo-url">{repo.url.replace('https://github.com/', '')}</div>
@@ -328,6 +333,7 @@
               <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="font-weight: 700; font-size: 1.1rem;">{repo.name}</div>
                 {#if repo.status === 'synced'}<span class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); font-size: 0.6rem; padding: 2px 8px;">SYNCED</span>{/if}
+                {#if repo.status === 'error'}<span class="badge" style="color: var(--status-red); background: rgba(255, 77, 77, 0.05); font-size: 0.6rem; padding: 2px 8px;">ERROR</span>{/if}
               </div>
               <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">{repo.url.replace('https://github.com/', '')}</div>
             </div>
@@ -363,6 +369,13 @@
                 <div class="badge" style="color: {selectedRepo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; background: rgba(255,255,255,0.03); font-size: 0.8rem; padding: 4px 12px; border: 1px solid rgba(255,255,255,0.05);">{selectedRepo.health_score}% HEALTH</div>
               </div>
               <a href={selectedRepo.url} target="_blank" rel="noopener noreferrer" style="color: var(--efinity-blue); text-decoration: none; font-family: monospace; font-size: 0.95rem; display: block; margin-top: 8px;">{selectedRepo.url} ↗</a>
+              
+              {#if selectedRepo.status === 'error'}
+                <div style="margin-top: 16px; padding: 12px 16px; background: rgba(255, 77, 77, 0.05); border: 1px solid rgba(255, 77, 77, 0.1); border-radius: 12px; color: var(--status-red); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  {selectedRepo.error_message}
+                </div>
+              {/if}
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: center;">

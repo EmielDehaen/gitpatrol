@@ -107,6 +107,9 @@ func addRepository(c echo.Context) error {
 	}
 
 	r.URL = NormalizeURL(r.URL)
+	if !strings.Contains(r.URL, "http") && !strings.Contains(r.URL, "@") {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Repository URL. Please provide a valid Git URL."})
+	}
 
 	res, err := db.Exec("INSERT INTO repositories (name, url, interval_minutes, status, auto_patrol) VALUES (?, ?, ?, ?, ?)", r.Name, r.URL, r.IntervalMinutes, "pending", r.AutoPatrol)
 	if err != nil {
