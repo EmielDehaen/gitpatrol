@@ -3,8 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,65 +10,9 @@ import (
 	"time"
 )
 
-type GitHubMeta struct {
-	StargazersCount int `json:"stargazers_count"`
-	ForksCount      int `json:"forks_count"`
-	OpenIssuesCount int `json:"open_issues_count"`
-}
-
-func fetchGitHubMeta(url string) (GitHubMeta, error) {
-	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
-	if len(parts) < 2 {
-		return GitHubMeta{}, fmt.Errorf("invalid URL")
-	}
-	repoPath := parts[len(parts)-2] + "/" + parts[len(parts)-1]
-	
-	apiURL := fmt.Sprintf("https://api.github.com/repos/%s", repoPath)
-	resp, err := http.Get(apiURL)
-	if err != nil {
-		return GitHubMeta{}, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return GitHubMeta{}, fmt.Errorf("GitHub API returned %d", resp.StatusCode)
-	}
-
-	var meta GitHubMeta
-	body, _ := io.ReadAll(resp.Body)
-	json.Unmarshal(body, &meta)
-	return meta, nil
-}
-
-func downloadAvatar(url string, username string) error {
-	avatarPath := filepath.Join("./data/avatars", username+".png")
-	os.MkdirAll("./data/avatars", 0755)
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	out, err := os.Create(avatarPath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	return err
-}
-
 func syncRepo(id int, url, name string) {
 	updateStatus(id, "syncing", "")
 	
-	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
-	username := ""
-	if len(parts) >= 2 {
-		username = parts[len(parts)-2]
-	}
-
 	repoPath := filepath.Join("./data", name)
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		// Normal clone
@@ -88,10 +30,13 @@ func syncRepo(id int, url, name string) {
 		}
 	}
 
-	meta, _ := fetchGitHubMeta(url)
-	if username != "" {
-		avatarURL := fmt.Sprintf("https://github.com/%s.png?size=100", username)
-		downloadAvatar(avatarURL, username)
+	source, err := GetSource(url)
+	var meta Metadata
+	if err == nil {
+		meta, _ = source.GetMetadata(url)
+		if meta.Username != "" {
+			downloadAvatar(meta.AvatarURL, meta.Username)
+		}
 	}
 
 	history := getCommitHistory(repoPath)
@@ -121,7 +66,7 @@ func syncRepo(id int, url, name string) {
 		default_branch = ?,
 		error_message = '' 
 		WHERE id = ?`, 
-		time.Now(), lastCommits, meta.StargazersCount, meta.ForksCount, meta.OpenIssuesCount, history, score, defaultBranch, id)
+		time.Now(), lastCommits, meta.Stars, meta.Forks, meta.OpenIssues, history, score, defaultBranch, id)
 	
 	broadcastStatus(id, "synced", "")
 }
@@ -178,7 +123,7 @@ func getLastCommits(repoPath string) string {
 	return strings.Join(results, "\n")
 }
 
-func calculateHealthScore(meta GitHubMeta, historyStr string, lastCommitDate time.Time) int {
+func calculateHealthScore(meta Metadata, historyStr string, lastCommitDate time.Time) int {
 	score := 50
 	var history []int
 	json.Unmarshal([]byte(historyStr), &history)
@@ -189,8 +134,8 @@ func calculateHealthScore(meta GitHubMeta, historyStr string, lastCommitDate tim
 	if daysSinceLast > 30 { score -= 10 }
 	if daysSinceLast > 90 { score -= 20 }
 	if daysSinceLast > 365 { score -= 30 }
-	if meta.StargazersCount > 1000 { score += 5 }
-	if meta.StargazersCount > 10000 { score += 5 }
+	if meta.Stars > 1000 { score += 5 }
+	if meta.Stars > 10000 { score += 5 }
 	if score < 0 { score = 0 }
 	if score > 100 { score = 100 }
 	return score
