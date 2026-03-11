@@ -30,10 +30,36 @@
   let showAddModal = $state(false);
   let newName = $state('');
   let newUrl = $state('');
-  let interval = $state(60);
+  let intervalString = $state('1h');
   let autoPatrol = $state(true);
 
   const API_URL = 'http://localhost:8080';
+
+  function minutesToHuman(minutes: number): string {
+    if (minutes <= 0) return '0m';
+    const d = Math.floor(minutes / 1440);
+    const h = Math.floor((minutes % 1440) / 60);
+    const m = minutes % 60;
+    
+    let parts = [];
+    if (d > 0) parts.push(`${d}d`);
+    if (h > 0) parts.push(`${h}h`);
+    if (m > 0) parts.push(`${m}m`);
+    return parts.join(' ') || '0m';
+  }
+
+  function humanToMinutes(str: string): number {
+    const regex = /(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?/i;
+    const match = str.match(regex);
+    if (!match) return 60;
+    
+    const d = parseInt(match[1] || '0');
+    const h = parseInt(match[2] || '0');
+    const m = parseInt(match[3] || '0');
+    
+    const total = (d * 1440) + (h * 60) + m;
+    return total > 0 ? total : 60;
+  }
 
   async function fetchRepos() {
     const res = await fetch(`${API_URL}/api/repositories`);
@@ -67,10 +93,15 @@
     const res = await fetch(`${API_URL}/api/repositories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newName, url: newUrl, interval_minutes: interval, auto_patrol: autoPatrol ? 1 : 0 })
+      body: JSON.stringify({ 
+        name: newName, 
+        url: newUrl, 
+        interval_minutes: humanToMinutes(intervalString), 
+        auto_patrol: autoPatrol ? 1 : 0 
+      })
     });
     if (res.ok) {
-      newName = ''; newUrl = ''; autoPatrol = true; showAddModal = false; fetchRepos();
+      newName = ''; newUrl = ''; autoPatrol = true; intervalString = '1h'; showAddModal = false; fetchRepos();
     }
   }
 
@@ -85,9 +116,19 @@
     const res = await fetch(`${API_URL}/api/repositories/${selectedRepo.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ interval_minutes: selectedRepo.interval_minutes, auto_patrol: selectedRepo.auto_patrol })
+      body: JSON.stringify({ 
+        interval_minutes: humanToMinutes(intervalString), 
+        auto_patrol: selectedRepo.auto_patrol 
+      })
     });
     if (res.ok) { fetchRepos(); showConfig = false; }
+  }
+
+  function toggleConfig() {
+    showConfig = !showConfig;
+    if (showConfig && selectedRepo) {
+      intervalString = minutesToHuman(selectedRepo.interval_minutes);
+    }
   }
 
   function getProgress(repo: Repository) {
@@ -261,7 +302,7 @@
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: center;">
-            <button class="secondary" style="padding: 10px; border-radius: 12px;" onclick={() => showConfig = !showConfig} data-tooltip="Toggle Config"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg></button>
+            <button class="secondary" style="padding: 10px; border-radius: 12px;" onclick={toggleConfig} data-tooltip="Toggle Config"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg></button>
             <button class="secondary" style="padding: 10px; border-radius: 12px; color: var(--status-red); border-color: rgba(255, 77, 77, 0.2);" onclick={() => deleteRepo(selectedRepo!.id)} data-tooltip="Delete Patrol"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
             <button class="secondary" style="padding: 10px; border-radius: 12px; margin-left: 12px;" onclick={() => { selectedRepo = null; showConfig = false; }} data-tooltip="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
           </div>
@@ -272,8 +313,12 @@
           <div style="margin-bottom: 48px; background: rgba(255,255,255,0.02); border-radius: 24px; border: 1px solid var(--efinity-blue); padding: 32px;">
             <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-blue); font-size: 0.75rem; font-weight: 800; margin-bottom: 24px; margin-top: 0;">Patrol Configuration</h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-              <div><label>SYNC INTERVAL (MIN)</label><input type="number" bind:value={selectedRepo.interval_minutes} style="margin-bottom: 0;" /></div>
               <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; border: 1px solid var(--glass-border);"><label style="margin: 0;">ACTIVE PATROL</label><input type="checkbox" checked={selectedRepo.auto_patrol === 1} onchange={(e) => selectedRepo!.auto_patrol = e.currentTarget.checked ? 1 : 0} style="width: 20px; height: 24px; margin: 0; cursor: pointer; accent-color: var(--efinity-blue);" /></div>
+              {#if selectedRepo.auto_patrol === 1}
+                <div><label>SYNC INTERVAL (e.g. 1h 30m)</label><input type="text" bind:value={intervalString} style="margin-bottom: 0;" placeholder="1h 30m" /></div>
+              {:else}
+                <div style="display: flex; align-items: center; color: var(--efinity-text-muted); font-size: 0.8rem; font-style: italic;">Manual synchronization only</div>
+              {/if}
             </div>
             <button style="width: 100%; margin-top: 24px; font-size: 0.8rem; padding: 14px;" onclick={updateConfig}>UPDATE CONFIGURATION</button>
           </div>
@@ -297,7 +342,30 @@
   <div class="modal-overlay" onclick={() => showAddModal = false}>
     <div class="modal-content" onclick={(e) => e.stopPropagation()} style="max-width: 540px;">
       <div class="modal-header"><h2 style="margin: 0; font-size: 1.8rem; font-weight: 800;">Deploy New Patrol</h2><p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-size: 0.9rem;">Configure a new asset for monitoring.</p></div>
-      <div class="modal-body"><label>DISPLAY NAME</label><input bind:value={newName} placeholder="e.g. efinity-frontend" /><label>REPOSITORY URL</label><input bind:value={newUrl} placeholder="https://github.com/..." /><label>SYNC INTERVAL (MINUTES)</label><input type="number" bind:value={interval} /><div style="margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; border: 1px solid var(--glass-border);"><div><div style="font-weight: 700; font-size: 0.9rem;">KEEP ACTIVE PATROL</div><div style="font-size: 0.75rem; color: var(--efinity-text-muted);">Continuously monitor and sync this asset.</div></div><input type="checkbox" bind:checked={autoPatrol} style="width: 24px; height: 24px; margin: 0; cursor: pointer; accent-color: var(--efinity-blue);" /></div><div style="display: flex; gap: 16px;"><button style="flex: 2;" onclick={addRepo}>ACTIVATE</button><button class="secondary" style="flex: 1;" onclick={() => showAddModal = false}>CANCEL</button></div></div>
+      <div class="modal-body">
+        <label>DISPLAY NAME</label>
+        <input bind:value={newName} placeholder="e.g. efinity-frontend" />
+        <label>REPOSITORY URL</label>
+        <input bind:value={newUrl} placeholder="https://github.com/..." />
+        
+        <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; border: 1px solid var(--glass-border);">
+          <div>
+            <div style="font-weight: 700; font-size: 0.9rem;">KEEP ACTIVE PATROL</div>
+            <div style="font-size: 0.75rem; color: var(--efinity-text-muted);">Continuously monitor and sync this asset.</div>
+          </div>
+          <input type="checkbox" bind:checked={autoPatrol} style="width: 24px; height: 24px; margin: 0; cursor: pointer; accent-color: var(--efinity-blue);" />
+        </div>
+
+        {#if autoPatrol}
+          <label>SYNC INTERVAL (e.g. 1h 30m, 1d 2h)</label>
+          <input type="text" bind:value={intervalString} placeholder="1h" />
+        {/if}
+
+        <div style="display: flex; gap: 16px; margin-top: 32px;">
+          <button style="flex: 2;" onclick={addRepo}>ACTIVATE</button>
+          <button class="secondary" style="flex: 1;" onclick={() => showAddModal = false}>CANCEL</button>
+        </div>
+      </div>
     </div>
   </div>
 {/if}
