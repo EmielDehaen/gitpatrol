@@ -1,3 +1,9 @@
+---
+sidebar_position: 0
+slug: /
+title: Introduction
+---
+
 # Introduction ⚡
 
 Welcome to **GitPatrol**, your high-performance "Code Insurance" dashboard.
