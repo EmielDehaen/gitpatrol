@@ -40,21 +40,26 @@
 
   function suggestName(url: string) {
     if (!url) return '';
-    // Normalize basic cases for the suggestion
     let cleanUrl = url.trim().replace(/\/$/, '');
+    let name = '';
+
     if (cleanUrl.includes('github.com/')) {
       const parts = cleanUrl.split('github.com/')[1].split('/');
-      if (parts.length >= 2) return parts[1].replace('.git', '');
+      name = parts.length >= 2 ? parts[1] : parts[0];
     } else if (cleanUrl.includes('gitlab.com/')) {
       const parts = cleanUrl.split('gitlab.com/')[1].split('/');
-      if (parts.length >= 2) return parts[parts.length - 1].replace('.git', '');
-    } else if (cleanUrl.includes(':')) { // SSH format
+      name = parts[parts.length - 1];
+    } else if (cleanUrl.includes(':')) { // SSH
       const parts = cleanUrl.split(':');
       const repoParts = parts[parts.length - 1].split('/');
-      return repoParts[repoParts.length - 1].replace('.git', '');
+      name = repoParts[repoParts.length - 1];
+    } else {
+      const parts = cleanUrl.split('/');
+      name = parts[parts.length - 1];
     }
-    const parts = cleanUrl.split('/');
-    return parts[parts.length - 1].replace('.git', '') || '';
+
+    name = name.replace('.git', '');
+    return name ? name.charAt(0).toUpperCase() + name.slice(1) : '';
   }
 
   $effect(() => {
