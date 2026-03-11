@@ -150,6 +150,22 @@ h1 {
   animation: timer-pulse 1s infinite;
 }
 
+.radial-timer.is-syncing svg {
+  animation: timer-rotate 2s linear infinite;
+  transform-origin: center;
+}
+
+.radial-timer.is-syncing .progress {
+  stroke: var(--status-green);
+  stroke-dasharray: 30 70;
+  filter: drop-shadow(0 0 5px var(--status-green));
+}
+
+@keyframes timer-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 @keyframes timer-pulse {
   0% { opacity: 0.8; stroke-width: 3; }
   50% { opacity: 1; stroke-width: 4; }
@@ -302,6 +318,165 @@ button.secondary:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
 ::-webkit-scrollbar-track { background: var(--efinity-dark); }
 ::-webkit-scrollbar-thumb { background: var(--efinity-gray-light); border-radius: 10px; border: 2px solid var(--efinity-dark); }
 ::-webkit-scrollbar-thumb:hover { background: var(--efinity-blue); }
+
+/* Tabs (Premium Segmented Control) */
+.tab-container {
+  display: flex;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  gap: 4px;
+  margin-bottom: 48px;
+  width: fit-content;
+}
+
+.tab-btn {
+  background: transparent;
+  color: var(--efinity-text-muted);
+  box-shadow: none;
+  padding: 10px 24px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.02);
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+
+.tab-btn.active {
+  background: var(--efinity-blue);
+  color: #fff;
+  box-shadow: 0 4px 20px var(--efinity-blue-glow);
+}
+
+.tab-count {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.6rem;
+  color: inherit;
+  font-weight: 700;
+}
+
+.tab-btn.active .tab-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Toasts */
+.toast-container {
+  position: fixed;
+  top: 40px;
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 9999;
+}
+
+.toast {
+  padding: 16px 24px;
+  border-radius: 16px;
+  background: rgba(10, 10, 10, 0.8);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  min-width: 300px;
+}
+
+.toast.success {
+  border-color: rgba(0, 255, 136, 0.3);
+  color: var(--status-green);
+}
+
+.toast.error {
+  border-color: rgba(255, 77, 77, 0.3);
+  color: var(--status-red);
+}
+
+.toast.info {
+  border-color: var(--efinity-blue);
+  color: var(--efinity-blue);
+}
+
+.notification-bell {
+  position: relative;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  padding: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--efinity-text-muted);
+  transition: all 0.3s;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.notification-bell:hover {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  border-color: var(--efinity-blue);
+}
+
+.notification-bell.has-incidents {
+  color: var(--status-red);
+  border-color: rgba(255, 77, 77, 0.2);
+  animation: bell-shake 0.5s ease-in-out 3; /* Shakes 3 times then stops */
+}
+
+.bell-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--status-red);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 900;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 10px rgba(255, 77, 77, 0.4);
+  border: 2px solid var(--efinity-dark);
+}
+
+@keyframes bell-shake {
+  0%, 100% { transform: rotate(0); }
+  10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
+  20%, 40%, 60%, 80% { transform: rotate(10deg); }
+}
+
+.incident-item {
+  background: rgba(255, 77, 77, 0.03);
+  border: 1px solid rgba(255, 77, 77, 0.1);
+  padding: 20px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  transition: all 0.3s;
+}
+
+.incident-item:hover {
+  background: rgba(255, 77, 77, 0.05);
+  border-color: rgba(255, 77, 77, 0.2);
+}
 
 /* Custom Tooltips */
 [data-tooltip] {

@@ -3,8 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,86 +11,42 @@ import (
 	"time"
 )
 
-type GitHubMeta struct {
-	StargazersCount int `json:"stargazers_count"`
-	ForksCount      int `json:"forks_count"`
-	OpenIssuesCount int `json:"open_issues_count"`
-}
-
-func fetchGitHubMeta(url string) (GitHubMeta, error) {
-	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
-	if len(parts) < 2 {
-		return GitHubMeta{}, fmt.Errorf("invalid URL")
-	}
-	repoPath := parts[len(parts)-2] + "/" + parts[len(parts)-1]
-	
-	apiURL := fmt.Sprintf("https://api.github.com/repos/%s", repoPath)
-	resp, err := http.Get(apiURL)
-	if err != nil {
-		return GitHubMeta{}, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return GitHubMeta{}, fmt.Errorf("GitHub API returned %d", resp.StatusCode)
-	}
-
-	var meta GitHubMeta
-	body, _ := io.ReadAll(resp.Body)
-	json.Unmarshal(body, &meta)
-	return meta, nil
-}
-
-func downloadAvatar(url string, username string) error {
-	avatarPath := filepath.Join("./data/avatars", username+".png")
-	os.MkdirAll("./data/avatars", 0755)
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	out, err := os.Create(avatarPath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	return err
-}
-
 func syncRepo(id int, url, name string) {
 	updateStatus(id, "syncing", "")
-	
-	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
-	username := ""
-	if len(parts) >= 2 {
-		username = parts[len(parts)-2]
-	}
 
 	repoPath := filepath.Join("./data", name)
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		// Normal clone
 		cmd := exec.Command("git", "clone", url, repoPath)
-		if err := cmd.Run(); err != nil {
-			updateStatus(id, "error", err.Error())
+		if output, err := cmd.CombinedOutput(); err != nil {
+			updateStatus(id, "error", formatCLIError(string(output), err))
 			return
 		}
 	} else {
 		// Accumulative archive fetch: keep everything, even if deleted on remote
 		cmd := exec.Command("git", "-C", repoPath, "fetch", "--all", "--tags", "--force")
-		if err := cmd.Run(); err != nil {
-			updateStatus(id, "error", err.Error())
+		if output, err := cmd.CombinedOutput(); err != nil {
+			updateStatus(id, "error", formatCLIError(string(output), err))
 			return
 		}
 	}
+	source, err := GetSource(url)
+	var meta Metadata
+	if err == nil {
+		meta, _ = source.GetMetadata(url)
+		if meta.Username != "" {
+			downloadAvatar(meta.AvatarURL, meta.Username)
+		}
 
-	meta, _ := fetchGitHubMeta(url)
-	if username != "" {
-		avatarURL := fmt.Sprintf("https://github.com/%s.png?size=100", username)
-		downloadAvatar(avatarURL, username)
+		// Sync Wiki
+		if wikiURL, exists := source.GetWikiURL(url); exists {
+			syncWiki(wikiURL, name)
+		}
+
+		// Sync Non-Git Metadata (Issues, Releases)
+		metadataPath := filepath.Join("./data", name, "metadata")
+		source.SyncIssues(url, metadataPath)
+		source.SyncReleases(url, metadataPath)
 	}
 
 	history := getCommitHistory(repoPath)
@@ -121,9 +76,20 @@ func syncRepo(id int, url, name string) {
 		default_branch = ?,
 		error_message = '' 
 		WHERE id = ?`, 
-		time.Now(), lastCommits, meta.StargazersCount, meta.ForksCount, meta.OpenIssuesCount, history, score, defaultBranch, id)
+		time.Now(), lastCommits, meta.Stars, meta.Forks, meta.OpenIssues, history, score, defaultBranch, id)
 	
 	broadcastStatus(id, "synced", "")
+}
+
+func syncWiki(url string, name string) {
+	wikiPath := filepath.Join("./data", name, "wiki")
+	if _, err := os.Stat(wikiPath); os.IsNotExist(err) {
+		// Try to clone, but don't fail if wiki doesn't exist (returns 128)
+		cmd := exec.Command("git", "clone", url, wikiPath)
+		cmd.Run()
+	} else {
+		exec.Command("git", "-C", wikiPath, "fetch", "--all", "--tags", "--force").Run()
+	}
 }
 
 func getCommitHistory(repoPath string) string {
@@ -178,7 +144,7 @@ func getLastCommits(repoPath string) string {
 	return strings.Join(results, "\n")
 }
 
-func calculateHealthScore(meta GitHubMeta, historyStr string, lastCommitDate time.Time) int {
+func calculateHealthScore(meta Metadata, historyStr string, lastCommitDate time.Time) int {
 	score := 50
 	var history []int
 	json.Unmarshal([]byte(historyStr), &history)
@@ -189,8 +155,8 @@ func calculateHealthScore(meta GitHubMeta, historyStr string, lastCommitDate tim
 	if daysSinceLast > 30 { score -= 10 }
 	if daysSinceLast > 90 { score -= 20 }
 	if daysSinceLast > 365 { score -= 30 }
-	if meta.StargazersCount > 1000 { score += 5 }
-	if meta.StargazersCount > 10000 { score += 5 }
+	if meta.Stars > 1000 { score += 5 }
+	if meta.Stars > 10000 { score += 5 }
 	if score < 0 { score = 0 }
 	if score > 100 { score = 100 }
 	return score
@@ -198,5 +164,57 @@ func calculateHealthScore(meta GitHubMeta, historyStr string, lastCommitDate tim
 
 func updateStatus(id int, status, errMsg string) {
 	db.Exec("UPDATE repositories SET status = ?, error_message = ? WHERE id = ?", status, errMsg, id)
+	
+	if status == "error" {
+		var repoName string
+		db.QueryRow("SELECT name FROM repositories WHERE id = ?", id).Scan(&repoName)
+
+		// 1. Permanent Failure Handling: Disable auto patrol for non-recoverable errors
+		lowerMsg := strings.ToLower(errMsg)
+		isPermanent := strings.Contains(lowerMsg, "not found") || 
+			strings.Contains(lowerMsg, "access denied") || 
+			strings.Contains(lowerMsg, "invalid repository") || 
+			strings.Contains(lowerMsg, "already in use") ||
+			strings.Contains(lowerMsg, "authentication failed")
+
+		if isPermanent {
+			db.Exec("UPDATE repositories SET auto_patrol = 0 WHERE id = ?", id)
+			log.Printf("[SYNC] Disabled auto_patrol for %s due to permanent failure: %s", repoName, errMsg)
+		}
+
+		// 2. Incident Deduplication: Only insert if the last unresolved incident for this repo is different
+		var lastMessage string
+		err := db.QueryRow("SELECT message FROM incidents WHERE repo_id = ? AND resolved = 0 ORDER BY created_at DESC LIMIT 1", id).Scan(&lastMessage)
+		if err != nil || lastMessage != errMsg {
+			db.Exec("INSERT INTO incidents (repo_id, repo_name, message, created_at) VALUES (?, ?, ?, ?)", id, repoName, errMsg, time.Now())
+		}
+	}
+	
 	broadcastStatus(id, status, errMsg)
 }
+
+func formatCLIError(output string, err error) string {
+	out := strings.ToLower(output)
+	if strings.Contains(out, "authentication failed") || strings.Contains(out, "terminal prompts disabled") {
+		return "Authentication failed. Private repositories are not supported yet."
+	}
+	if strings.Contains(out, "not found") || strings.Contains(out, "could not read from remote") {
+		return "The remote repository was not found. Please check the URL."
+	}
+	if strings.Contains(out, "connection refused") || strings.Contains(out, "could not resolve host") {
+		return "Failed to connect to the host. Check your internet connection or the provider status."
+	}
+	if strings.Contains(out, "already exists and is not an empty directory") {
+		return "The local storage for this repository is already in use by another folder."
+	}
+	
+	// Default fallbacks for common Git exit codes without output
+	if err != nil {
+		if strings.Contains(err.Error(), "exit status 128") {
+			return "Access denied or invalid repository. Verify the URL and permissions."
+		}
+		return "Operation failed: " + err.Error()
+	}
+	return "An unexpected error occurred during synchronization."
+}
+

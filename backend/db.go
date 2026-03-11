@@ -17,6 +17,24 @@ func initDB() {
 		log.Fatal(err)
 	}
 
+	// Enable WAL mode and set busy timeout for better concurrency
+	db.Exec("PRAGMA journal_mode=WAL;")
+	db.Exec("PRAGMA busy_timeout=5000;")
+
+	createIncidentsTable := `
+	CREATE TABLE IF NOT EXISTS incidents (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		repo_id INTEGER,
+		repo_name TEXT,
+		message TEXT,
+		created_at TIMESTAMP,
+		resolved INTEGER DEFAULT 0,
+		FOREIGN KEY(repo_id) REFERENCES repositories(id)
+	);`
+
+	_, err = db.Exec(createIncidentsTable)
+	if err != nil { log.Fatal(err) }
+
 	createTable := `
 	CREATE TABLE IF NOT EXISTS repositories (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
