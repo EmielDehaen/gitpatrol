@@ -12,24 +12,23 @@ import (
 
 func syncRepo(id int, url, name string) {
 	updateStatus(id, "syncing", "")
-	
+
 	repoPath := filepath.Join("./data", name)
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		// Normal clone
 		cmd := exec.Command("git", "clone", url, repoPath)
-		if err := cmd.Run(); err != nil {
-			updateStatus(id, "error", err.Error())
+		if output, err := cmd.CombinedOutput(); err != nil {
+			updateStatus(id, "error", formatCLIError(string(output), err))
 			return
 		}
 	} else {
 		// Accumulative archive fetch: keep everything, even if deleted on remote
 		cmd := exec.Command("git", "-C", repoPath, "fetch", "--all", "--tags", "--force")
-		if err := cmd.Run(); err != nil {
-			updateStatus(id, "error", err.Error())
+		if output, err := cmd.CombinedOutput(); err != nil {
+			updateStatus(id, "error", formatCLIError(string(output), err))
 			return
 		}
 	}
-
 	source, err := GetSource(url)
 	var meta Metadata
 	if err == nil {
@@ -166,3 +165,21 @@ func updateStatus(id int, status, errMsg string) {
 	db.Exec("UPDATE repositories SET status = ?, error_message = ? WHERE id = ?", status, errMsg, id)
 	broadcastStatus(id, status, errMsg)
 }
+
+func formatCLIError(output string, err error) string {
+	out := strings.ToLower(output)
+	if strings.Contains(out, "authentication failed") || strings.Contains(out, "terminal prompts disabled") {
+		return "Authentication failed. Private repositories are not supported yet."
+	}
+	if strings.Contains(out, "not found") || strings.Contains(out, "could not read from remote") {
+		return "The remote repository was not found. Please check the URL."
+	}
+	if strings.Contains(out, "connection refused") || strings.Contains(out, "could not resolve host") {
+		return "Failed to connect to the host. Check your internet connection or the provider status."
+	}
+	if err != nil {
+		return "Git CLI Error: " + err.Error()
+	}
+	return "An unknown error occurred during sync."
+}
+
