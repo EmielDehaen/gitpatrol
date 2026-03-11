@@ -38,27 +38,26 @@
   let intervalString = $state('1h');
   let autoPatrol = $state(true);
 
+  function getNormalizedUrl(url: string) {
+    if (!url || url.length < 3) return '';
+    let u = url.trim().replace(/\.git$/, '');
+    if (u.startsWith('git@')) {
+      u = u.replace(':', '/').replace('git@', 'https://');
+    }
+    if (u.includes('/tree/')) u = u.split('/tree/')[0];
+    if (u.includes('/blob/')) u = u.split('/blob/')[0];
+    if (!u.startsWith('http') && u.includes('/')) {
+      const parts = u.split('/');
+      if (parts.length === 2) u = 'https://github.com/' + u;
+    }
+    return u;
+  }
+
   function suggestName(url: string) {
     if (!url) return '';
-    let cleanUrl = url.trim().replace(/\/$/, '');
-    let name = '';
-
-    if (cleanUrl.includes('github.com/')) {
-      const parts = cleanUrl.split('github.com/')[1].split('/');
-      name = parts.length >= 2 ? parts[1] : parts[0];
-    } else if (cleanUrl.includes('gitlab.com/')) {
-      const parts = cleanUrl.split('gitlab.com/')[1].split('/');
-      name = parts[parts.length - 1];
-    } else if (cleanUrl.includes(':')) { // SSH
-      const parts = cleanUrl.split(':');
-      const repoParts = parts[parts.length - 1].split('/');
-      name = repoParts[repoParts.length - 1];
-    } else {
-      const parts = cleanUrl.split('/');
-      name = parts[parts.length - 1];
-    }
-
-    name = name.replace('.git', '');
+    let cleanUrl = getNormalizedUrl(url);
+    const parts = cleanUrl.split('/');
+    let name = parts[parts.length - 1];
     return name ? name.charAt(0).toUpperCase() + name.slice(1) : '';
   }
 
@@ -487,12 +486,21 @@
       <div class="modal-header"><h2 style="margin: 0; font-size: 1.8rem; font-weight: 800;">Deploy New Patrol</h2><p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-size: 0.9rem;">Configure a new asset for monitoring.</p></div>
       <div class="modal-body">
         <label>REPOSITORY URL</label>
-        <input bind:value={newUrl} placeholder="https://github.com/hoppscotch/hoppscotch" />
+        <input bind:value={newUrl} placeholder="https://github.com/hoppscotch/hoppscotch" style="margin-bottom: 8px;" />
+        
+        {#if getNormalizedUrl(newUrl)}
+          <div style="margin-bottom: 24px;">
+            <a href={getNormalizedUrl(newUrl)} target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--efinity-blue); text-decoration: none; font-family: monospace; opacity: 0.8;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-right: 4px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+              {getNormalizedUrl(newUrl)}
+            </a>
+          </div>
+        {/if}
         
         {#if newUrl.length > 3}
           <div transition:fade>
-            <label>DISPLAY NAME (SUGGESTED)</label>
-            <input bind:value={newName} placeholder="e.g. hoppscotch" />
+            <label>DISPLAY NAME</label>
+            <input bind:value={newName} placeholder="e.g. Hoppscotch" />
           </div>
         {/if}
 
