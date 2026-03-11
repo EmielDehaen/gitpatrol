@@ -21,6 +21,17 @@ func initDB() {
 	db.Exec("PRAGMA journal_mode=WAL;")
 	db.Exec("PRAGMA busy_timeout=5000;")
 
+	createUsersTable := `
+	CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		username TEXT UNIQUE,
+		password_hash TEXT,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);`
+
+	_, err = db.Exec(createUsersTable)
+	if err != nil { log.Fatal(err) }
+
 	createIncidentsTable := `
 	CREATE TABLE IF NOT EXISTS incidents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
