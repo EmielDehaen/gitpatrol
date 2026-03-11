@@ -150,10 +150,14 @@ h1 {
   animation: timer-pulse 1s infinite;
 }
 
+.radial-timer.is-syncing svg {
+  animation: timer-rotate 2s linear infinite;
+  transform-origin: center;
+}
+
 .radial-timer.is-syncing .progress {
   stroke: var(--status-green);
   stroke-dasharray: 30 70;
-  animation: timer-rotate 1s linear infinite;
   filter: drop-shadow(0 0 5px var(--status-green));
 }
 
