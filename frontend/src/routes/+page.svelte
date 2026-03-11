@@ -24,7 +24,7 @@
   let repositories = $state<Repository[]>([]);
   let viewMode = $state<'grid' | 'list'>('grid');
   let selectedRepo = $state<Repository | null>(null);
-  let activeTab = $state<'readme' | 'issues' | 'releases' | 'wiki'>('readme');
+  let activeTab = $state<'readme' | 'issues' | 'releases' | 'wiki' | 'logs'>('readme');
   let showConfigModal = $state(false);
   let readmeContent = $state('');
   let wikiContent = $state('');
@@ -346,11 +346,12 @@
         </div>
       </div>
       <div class="modal-body">
-        <div class="tabs" style="display: flex; gap: 32px; border-bottom: 1px solid var(--glass-border); margin-bottom: 32px;">
-          <button class="tab-btn" class:active={activeTab === 'readme'} onclick={() => activeTab = 'readme'}>MISSION BRIEFING</button>
+        <div class="tab-container">
+          <button class="tab-btn" class:active={activeTab === 'readme'} onclick={() => activeTab = 'readme'}>BRIEFING</button>
           <button class="tab-btn" class:active={activeTab === 'issues'} onclick={() => activeTab = 'issues'}>INTEL <span class="tab-count">{issues.length}</span></button>
           <button class="tab-btn" class:active={activeTab === 'releases'} onclick={() => activeTab = 'releases'}>CHRONICLE <span class="tab-count">{releases.length}</span></button>
           <button class="tab-btn" class:active={activeTab === 'wiki'} onclick={() => activeTab = 'wiki'}>WIKI</button>
+          <button class="tab-btn" class:active={activeTab === 'logs'} onclick={() => activeTab = 'logs'}>LOGS</button>
         </div>
 
         {#if activeTab === 'readme'}
@@ -400,17 +401,16 @@
           </div>
         {:else if activeTab === 'wiki'}
           <div class="readme-content">{@html wikiContent}</div>
+        {:else if activeTab === 'logs'}
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            {#each parseCommits(selectedRepo.last_commit) as commit}
+              <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">{#if commit.branch}<span class="branch-badge">{commit.branch}</span>{/if}<span style="font-weight: 600; font-size: 1rem;">{commit.message}</span></div>
+                <div style="font-size: 0.8rem; color: var(--efinity-text-muted); font-weight: 500;">{commit.author} • {commit.date} • <span style="color: var(--efinity-blue); font-family: monospace;">{commit.hash.substring(0,7)}</span></div>
+              </div>
+            {/each}
+          </div>
         {/if}
-
-        <h4 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--efinity-text-muted); font-size: 0.75rem; font-weight: 800; margin-top: 48px; margin-bottom: 24px;">Recent Mission Logs</h4>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          {#each parseCommits(selectedRepo.last_commit) as commit}
-            <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">{#if commit.branch}<span class="branch-badge">{commit.branch}</span>{/if}<span style="font-weight: 600; font-size: 1rem;">{commit.message}</span></div>
-              <div style="font-size: 0.8rem; color: var(--efinity-text-muted); font-weight: 500;">{commit.author} • {commit.date} • <span style="color: var(--efinity-blue); font-family: monospace;">{commit.hash.substring(0,7)}</span></div>
-            </div>
-          {/each}
-        </div>
       </div>
     </div>
   </div>
