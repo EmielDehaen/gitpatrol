@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -9,7 +10,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var jwtKey = []byte("efinity-gitpatrol-community-secret")
+func getJWTKey() []byte {
+	return []byte(os.Getenv("JWT_SECRET"))
+}
+
+func getPepper() string {
+	return os.Getenv("PASSWORD_PEPPER")
+}
 
 type Claims struct {
 	UserID   int    `json:"user_id"`
@@ -18,12 +25,14 @@ type Claims struct {
 }
 
 func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	peppered := password + getPepper()
+	bytes, err := bcrypt.GenerateFromPassword([]byte(peppered), 14)
 	return string(bytes), err
 }
 
 func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	peppered := password + getPepper()
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(peppered))
 	return err == nil
 }
 
@@ -38,7 +47,7 @@ func generateToken(id int, username string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
+	return token.SignedString(getJWTKey())
 }
 
 func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
@@ -52,7 +61,7 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		claims := &Claims{}
 
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			return jwtKey, nil
+			return getJWTKey(), nil
 		})
 
 		if err != nil || !token.Valid {
