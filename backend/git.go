@@ -177,9 +177,17 @@ func formatCLIError(output string, err error) string {
 	if strings.Contains(out, "connection refused") || strings.Contains(out, "could not resolve host") {
 		return "Failed to connect to the host. Check your internet connection or the provider status."
 	}
-	if err != nil {
-		return "Git CLI Error: " + err.Error()
+	if strings.Contains(out, "already exists and is not an empty directory") {
+		return "The local storage for this repository is already in use by another folder."
 	}
-	return "An unknown error occurred during sync."
+	
+	// Default fallbacks for common Git exit codes without output
+	if err != nil {
+		if strings.Contains(err.Error(), "exit status 128") {
+			return "Access denied or invalid repository. Verify the URL and permissions."
+		}
+		return "Operation failed: " + err.Error()
+	}
+	return "An unexpected error occurred during synchronization."
 }
 
