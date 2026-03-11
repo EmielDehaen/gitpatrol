@@ -97,6 +97,19 @@
 
   const API_URL = 'http://localhost:8080';
 
+  async function apiFetch(endpoint: string, options: RequestInit = {}) {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      credentials: 'include'
+    });
+    if (res.status === 401 && isAuthenticated) {
+      handleLogout();
+      showToast('Session expired. Please login again.', 'error');
+      throw new Error('Unauthorized');
+    }
+    return res;
+  }
+
   async function checkAuth() {
     try {
       const res = await fetch(`${API_URL}/api/auth/status`, { credentials: 'include' });
@@ -104,7 +117,7 @@
       needsBootstrap = data.needs_bootstrap;
       isAuthenticated = data.logged_in;
       if (isAuthenticated) {
-        const meRes = await fetch(`${API_URL}/api/me`, { credentials: 'include' });
+        const meRes = await apiFetch('/api/me');
         if (meRes.ok) {
           const meData = await meRes.json();
           authUsername = meData.username;
@@ -151,15 +164,14 @@
       showToast('Passwords do not match.', 'error');
       return;
     }
-    const res = await fetch(`${API_URL}/api/user`, {
+    const res = await apiFetch('/api/user', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         username: editUsername, 
         old_password: oldPassword, 
         new_password: newPassword 
-      }),
-      credentials: 'include'
+      })
     });
     if (res.ok) {
       showToast('Profile updated.', 'success');
@@ -199,126 +211,139 @@
   }
 
   async function fetchRepos() {
-    const res = await fetch(`${API_URL}/api/repositories`, { credentials: 'include' });
-    if (!res.ok) {
-      if (res.status === 401) isAuthenticated = false;
-      return;
-    }
-    repositories = await res.json();
+    try {
+      const res = await apiFetch('/api/repositories');
+      if (!res.ok) return;
+      repositories = await res.json();
+    } catch (e) {}
   }
 
   async function fetchIncidents() {
-    const res = await fetch(`${API_URL}/api/incidents`, { credentials: 'include' });
-    if (!res.ok) return;
-    incidents = await res.json();
+    try {
+      const res = await apiFetch('/api/incidents');
+      if (!res.ok) return;
+      incidents = await res.json();
+    } catch (e) {}
   }
 
   async function clearIncidents() {
-    const res = await fetch(`${API_URL}/api/incidents`, { method: 'DELETE', credentials: 'include' });
-    if (res.ok) {
-      incidents = [];
-      showIncidentModal = false;
-      showToast('All incidents cleared.', 'info');
-    }
+    try {
+      const res = await apiFetch('/api/incidents', { method: 'DELETE' });
+      if (res.ok) {
+        incidents = [];
+        showIncidentModal = false;
+        showToast('All incidents cleared.', 'info');
+      }
+    } catch (e) {}
   }
 
   async function fetchMetadata(repo: Repository) {
-    const assetBase = `${API_URL}/api/repositories/${repo.id}/assets/`;
+    const assetBase = `/api/repositories/${repo.id}/assets/`;
     
-    // Fetch Issues
-    const issuesRes = await fetch(`${assetBase}metadata/issues.json`, { credentials: 'include' });
-    issues = issuesRes.ok ? await issuesRes.json() : [];
+    try {
+      // Fetch Issues
+      const issuesRes = await apiFetch(`${assetBase}metadata/issues.json`);
+      issues = issuesRes.ok ? await issuesRes.json() : [];
 
-    // Fetch Releases
-    const releasesRes = await fetch(`${assetBase}metadata/releases.json`, { credentials: 'include' });
-    releases = releasesRes.ok ? await releasesRes.json() : [];
+      // Fetch Releases
+      const releasesRes = await apiFetch(`${assetBase}metadata/releases.json`);
+      releases = releasesRes.ok ? await releasesRes.json() : [];
 
-    // Fetch Wiki (Try Home.md)
-    const wikiRes = await fetch(`${assetBase}wiki/Home.md`, { credentials: 'include' });
-    if (wikiRes.ok) {
-      wikiContent = await marked.parse(await wikiRes.text());
-    } else {
-      wikiContent = '<p style="color: var(--efinity-text-muted)">No documentation (Wiki) found for this asset.</p>';
-    }
+      // Fetch Wiki (Try Home.md)
+      const wikiRes = await apiFetch(`${assetBase}wiki/Home.md`);
+      if (wikiRes.ok) {
+        wikiContent = await marked.parse(await wikiRes.text());
+      } else {
+        wikiContent = '<p style="color: var(--efinity-text-muted)">No documentation (Wiki) found for this asset.</p>';
+      }
+    } catch (e) {}
   }
 
   async function fetchReadme(repo: Repository) {
     readmeContent = 'Loading mission briefing...';
     readmeExpanded = false;
     activeTab = 'readme';
-    const res = await fetch(`${API_URL}/api/repositories/${repo.id}/readme`, { credentials: 'include' });
-    if (res.ok) {
-      let text = await res.text();
-      const assetBase = `${API_URL}/api/repositories/${repo.id}/assets/`;
-      
-      // Fix paths
-      text = text.replace(/!\[([^\]]*)\]\((?!(?:http|https|ftp|data:))(?:\.\/)?([^)]+)\)/gi, `![$1](${assetBase}$2)`);
-      text = text.replace(/<img([^>]+)src=["'](?!(?:http|https|ftp))(?:\.\/)?([^"']+)["']/gi, (match, pre, path) => `<img${pre}src="${assetBase}${path}"`);
-      text = text.replace(/\[([^\]]*)\]\((?!(?:http|https|ftp|#))(?:\.\/)?([^)]+)\)/gi, `[$1](${assetBase}$2)`);
+    try {
+      const res = await apiFetch(`/api/repositories/${repo.id}/readme`);
+      if (res.ok) {
+        let text = await res.text();
+        const assetBase = `${API_URL}/api/repositories/${repo.id}/assets/`;
+        
+        // Fix paths
+        text = text.replace(/!\[([^\]]*)\]\((?!(?:http|https|ftp|data:))(?:\.\/)?([^)]+)\)/gi, `![$1](${assetBase}$2)`);
+        text = text.replace(/<img([^>]+)src=["'](?!(?:http|https|ftp))(?:\.\/)?([^"']+)["']/gi, (match, pre, path) => `<img${pre}src="${assetBase}${path}"`);
+        text = text.replace(/\[([^\]]*)\]\((?!(?:http|https|ftp|#))(?:\.\/)?([^)]+)\)/gi, `[$1](${assetBase}$2)`);
 
-      readmeContent = await marked.parse(text, { gfm: true, breaks: true });
-    } else {
-      readmeContent = '<p style="color: var(--efinity-text-muted)">No mission briefing available for this asset.</p>';
-    }
-    fetchMetadata(repo);
+        readmeContent = await marked.parse(text, { gfm: true, breaks: true });
+      } else {
+        readmeContent = '<p style="color: var(--efinity-text-muted)">No mission briefing available for this asset.</p>';
+      }
+      fetchMetadata(repo);
+    } catch (e) {}
   }
 
   $effect(() => { if (selectedRepo) fetchReadme(selectedRepo); });
 
   async function addRepo() {
     if (!newName || !newUrl) return;
-    const res = await fetch(`${API_URL}/api/repositories`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        name: newName, 
-        url: newUrl, 
-        interval_minutes: humanToMinutes(intervalString), 
-        auto_patrol: autoPatrol ? 1 : 0 
-      }),
-      credentials: 'include'
-    });
-    if (res.ok) {
-      newName = ''; newUrl = ''; autoPatrol = true; intervalString = '1h'; showAddModal = false; fetchRepos();
-      showToast('Patrol deployed successfully!', 'success');
-    } else {
-      const err = await res.json();
-      showToast(err.error || 'Failed to deploy patrol.', 'error');
-    }
+    try {
+      const res = await apiFetch('/api/repositories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name: newName, 
+          url: newUrl, 
+          interval_minutes: humanToMinutes(intervalString), 
+          auto_patrol: autoPatrol ? 1 : 0 
+        })
+      });
+      if (res.ok) {
+        newName = ''; newUrl = ''; autoPatrol = true; intervalString = '1h'; showAddModal = false; fetchRepos();
+        showToast('Patrol deployed successfully!', 'success');
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Failed to deploy patrol.', 'error');
+      }
+    } catch (e) {}
   }
 
   async function deleteRepo(id: number) {
     if (!confirm('Are you sure you want to terminate this patrol?')) return;
-    const res = await fetch(`${API_URL}/api/repositories/${id}`, { method: 'DELETE', credentials: 'include' });
-    if (res.ok) { 
-      selectedRepo = null; showConfigModal = false; fetchRepos(); 
-      showToast('Patrol terminated.', 'info');
-    }
+    try {
+      const res = await apiFetch(`/api/repositories/${id}`, { method: 'DELETE' });
+      if (res.ok) { 
+        selectedRepo = null; showConfigModal = false; fetchRepos(); 
+        showToast('Patrol terminated.', 'info');
+      }
+    } catch (e) {}
   }
 
   async function updateConfig() {
     if (!selectedRepo) return;
-    const res = await fetch(`${API_URL}/api/repositories/${selectedRepo.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        interval_minutes: humanToMinutes(intervalString), 
-        auto_patrol: selectedRepo.auto_patrol 
-      }),
-      credentials: 'include'
-    });
-    if (res.ok) { 
-      await fetchRepos();
-      selectedRepo = repositories.find(r => r.id === selectedRepo?.id) || null;
-      showConfigModal = false; 
-      showToast('Configuration updated.', 'success');
-    } else {
-      showToast('Failed to update configuration.', 'error');
-    }
+    try {
+      const res = await apiFetch(`/api/repositories/${selectedRepo.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          interval_minutes: humanToMinutes(intervalString), 
+          auto_patrol: selectedRepo.auto_patrol 
+        })
+      });
+      if (res.ok) { 
+        await fetchRepos();
+        selectedRepo = repositories.find(r => r.id === selectedRepo?.id) || null;
+        showConfigModal = false; 
+        showToast('Configuration updated.', 'success');
+      } else {
+        showToast('Failed to update configuration.', 'error');
+      }
+    } catch (e) {}
   }
 
   async function syncRepoNow(repo: Repository) {
-    await fetch(`${API_URL}/api/repositories/${repo.id}/sync`, { method: 'POST', credentials: 'include' });
+    try {
+      await apiFetch(`/api/repositories/${repo.id}/sync`, { method: 'POST' });
+    } catch (e) {}
   }
 
   function openConfig() {
