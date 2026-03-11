@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -151,6 +152,22 @@ func updateRepository(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+func syncRepositoryNow(c echo.Context) error {
+	id := c.Param("id")
+	var name, url string
+	err := db.QueryRow("SELECT name, url FROM repositories WHERE id = ?", id).Scan(&name, &url)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Repository not found"})
+	}
+
+	// Trigger async sync
+	var repoID int
+	fmt.Sscanf(id, "%d", &repoID)
+	go syncRepo(repoID, url, name)
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "Syncing started"})
 }
 
 func getReadme(c echo.Context) error {
