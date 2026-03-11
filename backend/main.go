@@ -13,6 +13,8 @@ func main() {
 	initDB()
 	defer db.Close()
 
+	initSyncManager(3)
+
 	os.MkdirAll("./data", 0755)
 
 	e := echo.New()
@@ -58,7 +60,7 @@ func main() {
 					}
 					
 					if shouldSync {
-						go syncRepo(id, url, name)
+						manager.Enqueue(id, url, name)
 					}
 				}
 				rows.Close()

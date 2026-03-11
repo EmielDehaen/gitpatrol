@@ -120,7 +120,7 @@ func addRepository(c echo.Context) error {
 	}
 
 	id, _ := res.LastInsertId()
-	go syncRepo(int(id), r.URL, r.Name)
+	manager.Enqueue(int(id), r.URL, r.Name)
 	
 	return c.JSON(http.StatusCreated, map[string]int{"id": int(id)})
 }
@@ -170,10 +170,10 @@ func syncRepositoryNow(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Repository not found"})
 	}
 
-	// Trigger async sync
+	// Trigger async sync via manager
 	var repoID int
 	fmt.Sscanf(id, "%d", &repoID)
-	go syncRepo(repoID, url, name)
+	manager.Enqueue(repoID, url, name)
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "Syncing started"})
 }

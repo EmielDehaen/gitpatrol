@@ -150,6 +150,22 @@ h1 {
   animation: timer-pulse 1s infinite;
 }
 
+.radial-timer.is-syncing svg {
+  animation: timer-rotate 2s linear infinite;
+  transform-origin: center;
+}
+
+.radial-timer.is-syncing .progress {
+  stroke: var(--status-green);
+  stroke-dasharray: 30 70;
+  filter: drop-shadow(0 0 5px var(--status-green));
+}
+
+@keyframes timer-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 @keyframes timer-pulse {
   0% { opacity: 0.8; stroke-width: 3; }
   50% { opacity: 1; stroke-width: 4; }

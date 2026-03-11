@@ -4,11 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
+
+var githubRateLimitUntil time.Time
 
 type Metadata struct {
 	Stars      int
@@ -28,6 +32,10 @@ type Source interface {
 type GitHubSource struct{}
 
 func (s *GitHubSource) GetMetadata(url string) (Metadata, error) {
+	if time.Now().Before(githubRateLimitUntil) {
+		return Metadata{}, fmt.Errorf("GitHub API rate limit active, skipping metadata")
+	}
+
 	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
 	if len(parts) < 2 {
 		return Metadata{}, fmt.Errorf("invalid URL")
@@ -41,6 +49,12 @@ func (s *GitHubSource) GetMetadata(url string) (Metadata, error) {
 		return Metadata{}, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == 403 {
+		githubRateLimitUntil = time.Now().Add(15 * time.Minute)
+		log.Printf("[SOURCE] GitHub Rate Limit hit. Pausing API calls for 15 minutes.")
+		return Metadata{}, fmt.Errorf("GitHub API rate limit hit")
+	}
 
 	if resp.StatusCode != 200 {
 		return Metadata{}, fmt.Errorf("GitHub API returned %d", resp.StatusCode)
@@ -70,6 +84,8 @@ func (s *GitHubSource) GetWikiURL(url string) (string, bool) {
 }
 
 func (s *GitHubSource) SyncIssues(url string, destPath string) error {
+	if time.Now().Before(githubRateLimitUntil) { return nil }
+
 	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
 	if len(parts) < 2 { return fmt.Errorf("invalid URL") }
 	repoPath := parts[len(parts)-2] + "/" + parts[len(parts)-1]
@@ -78,6 +94,11 @@ func (s *GitHubSource) SyncIssues(url string, destPath string) error {
 	resp, err := http.Get(apiURL)
 	if err != nil { return err }
 	defer resp.Body.Close()
+
+	if resp.StatusCode == 403 {
+		githubRateLimitUntil = time.Now().Add(15 * time.Minute)
+		return fmt.Errorf("GitHub API rate limit hit")
+	}
 
 	if resp.StatusCode != 200 { return fmt.Errorf("GitHub API returned %d", resp.StatusCode) }
 
@@ -91,6 +112,8 @@ func (s *GitHubSource) SyncIssues(url string, destPath string) error {
 }
 
 func (s *GitHubSource) SyncReleases(url string, destPath string) error {
+	if time.Now().Before(githubRateLimitUntil) { return nil }
+
 	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
 	if len(parts) < 2 { return fmt.Errorf("invalid URL") }
 	repoPath := parts[len(parts)-2] + "/" + parts[len(parts)-1]
@@ -99,6 +122,11 @@ func (s *GitHubSource) SyncReleases(url string, destPath string) error {
 	resp, err := http.Get(apiURL)
 	if err != nil { return err }
 	defer resp.Body.Close()
+
+	if resp.StatusCode == 403 {
+		githubRateLimitUntil = time.Now().Add(15 * time.Minute)
+		return fmt.Errorf("GitHub API rate limit hit")
+	}
 
 	if resp.StatusCode != 200 { return fmt.Errorf("GitHub API returned %d", resp.StatusCode) }
 
