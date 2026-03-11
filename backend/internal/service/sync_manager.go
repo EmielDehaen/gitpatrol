@@ -1,8 +1,11 @@
-package main
+package service
 
 import (
 	"log"
 	"sync"
+
+	"gitpatrol/internal/database"
+	"gitpatrol/internal/websocket"
 )
 
 type SyncTask struct {
@@ -16,21 +19,26 @@ type SyncManager struct {
 	activeTasks map[int]bool
 	mu          sync.Mutex
 	workerCount int
+	db          *database.DB
+	hub         *websocket.Hub
+	repoService *RepoService
 }
 
-var manager *SyncManager
-
-func initSyncManager(workerCount int) {
-	manager = &SyncManager{
+func NewSyncManager(workerCount int, db *database.DB, hub *websocket.Hub, repoService *RepoService) *SyncManager {
+	m := &SyncManager{
 		tasks:       make(chan SyncTask, 100),
 		activeTasks: make(map[int]bool),
 		workerCount: workerCount,
+		db:          db,
+		hub:         hub,
+		repoService: repoService,
 	}
 
 	for i := 0; i < workerCount; i++ {
-		go manager.worker(i)
+		go m.worker(i)
 	}
 	log.Printf("[MANAGER] Started SyncManager with %d workers", workerCount)
+	return m
 }
 
 func (m *SyncManager) Enqueue(id int, url, name string) {
@@ -50,7 +58,7 @@ func (m *SyncManager) Enqueue(id int, url, name string) {
 func (m *SyncManager) worker(id int) {
 	for task := range m.tasks {
 		log.Printf("[WORKER %d] Starting sync for %s", id, task.Name)
-		syncRepo(task.ID, task.URL, task.Name)
+		m.repoService.SyncRepo(task.ID, task.URL, task.Name)
 		log.Printf("[WORKER %d] Finished sync for %s", id, task.Name)
 
 		m.mu.Lock()
