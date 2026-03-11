@@ -7,16 +7,25 @@ Built for the **Efinity** standard: minimalist, fast, and visually polished.
 ---
 
 ## ✨ Key Features
-- **Professional Mirroring:** Maintains a full, accumulative archive of repositories.
+- **Professional Mirroring:** Maintains a full, accumulative archive of repositories using `--mirror` clones.
+- **Intel Extraction:** Locally archives Issues, Release Notes, and Wikis for offline access.
 - **Health Monitoring:** Intelligently calculates a "Health Score" based on activity, stars, and remote availability.
-- **Multi-Provider Ready:** Built with a modular source system (GitHub, GitLab, and more).
-- **Offline Discovery:** Explore READMEs and commit history directly from the mirrored local data.
+- **Dynamic Badges:** Generate SVG health badges for your mirrored assets.
+- **Multi-Provider Ready:** Built with a modular source system (GitHub, GitLab, and generic Git).
+- **Asset Service:** Serves README images and documentation directly from the local Git object store.
 - **Real-time Engine:** WebSocket-driven updates for live synchronization monitoring.
 
 ---
 
+## 🔐 Community Edition Security
+- **Single-User Admin:** Simple, secure administrative access for your homelab or team.
+- **Bootstrap Ready:** Just run the container and create your admin account on the first visit.
+- **Secure Sessions:** JWT-based authentication using Http-Only cookies with configurable security flags.
+
+---
+
 ## 🛠️ Tech Stack
-- **Backend:** Go (Golang 1.24) + SQLite
+- **Backend:** Go (Golang 1.24) + Echo + SQLite
 - **Frontend:** SvelteKit + Bun + Tailwind CSS 4.0
 - **Deployment:** Docker & Docker Compose
 
@@ -34,7 +43,7 @@ Detailed documentation is available in the `docs/` folder:
 ## 🚀 Quick Start (Docker)
 1.  **Clone:** `git clone https://github.com/EmielDehaen/gitpatrol.git`
 2.  **Run:** `docker-compose up -d`
-3.  **Enjoy:** Open `http://localhost:3000`
+3.  **Enjoy:** Open `http://localhost:3000` and follow the bootstrap instructions.
 
 ---
 
