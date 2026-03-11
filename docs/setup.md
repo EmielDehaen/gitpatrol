@@ -1,3 +1,8 @@
+---
+sidebar_position: 3
+title: Setup & Installation
+---
+
 # Setup & Installation ⚙️
 
 GitPatrol is designed for simple, robust deployment within home labs or corporate infrastructure.

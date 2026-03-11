@@ -1,3 +1,8 @@
+---
+sidebar_position: 2
+title: Architecture
+---
+
 # Architecture ⚡
 
 GitPatrol follows a modern decoupled architecture designed for high performance and low-overhead repository mirroring.

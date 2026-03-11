@@ -1,3 +1,8 @@
+---
+sidebar_position: 1
+title: Features
+---
+
 # Core Features 🚀
 
 GitPatrol provides a suite of tools for repository mirroring and monitoring, designed for high-concurrency and reliability.
