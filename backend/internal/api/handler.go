@@ -63,29 +63,37 @@ func (h *Handler) RegisterRoutes(e *echo.Echo) {
 }
 
 func (h *Handler) CheckAuthStatus(c echo.Context) error {
-	cookie, err := c.Cookie("token")
-	if err != nil {
-		return c.JSON(http.StatusOK, map[string]bool{"authenticated": false})
-	}
-	// We'll trust the presence of a cookie for status check, 
-	// or we could do a full validation like in the middleware
-	return c.JSON(http.StatusOK, map[string]bool{"authenticated": cookie.Value != ""})
+        needsBootstrap := h.authService.NeedsBootstrap()
+        cookie, err := c.Cookie("token")
+        if err != nil {
+                return c.JSON(http.StatusOK, map[string]interface{}{
+                        "authenticated":   false,
+                        "needs_bootstrap": needsBootstrap,
+                })
+        }
+        return c.JSON(http.StatusOK, map[string]interface{}{
+                "authenticated":   cookie.Value != "",
+                "needs_bootstrap": needsBootstrap,
+        })
 }
-
 func (h *Handler) Register(c echo.Context) error {
-	var body struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
-	if err := c.Bind(&body); err != nil {
-		return err
-	}
+        if !h.authService.NeedsBootstrap() {
+                return c.JSON(http.StatusForbidden, map[string]string{"error": "registration is only allowed during initial system bootstrap"})
+        }
 
-	if err := h.authService.Register(body.Username, body.Password); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "username already exists"})
-	}
+        var body struct {
+                Username string `json:"username"`
+                Password string `json:"password"`
+        }
+        if err := c.Bind(&body); err != nil {
+                return err
+        }
 
-	return c.JSON(http.StatusCreated, map[string]string{"message": "registered successfully"})
+        if err := h.authService.Register(body.Username, body.Password); err != nil {
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "username already exists"})
+        }
+
+        return c.JSON(http.StatusCreated, map[string]string{"message": "registered successfully"})
 }
 
 func (h *Handler) Login(c echo.Context) error {

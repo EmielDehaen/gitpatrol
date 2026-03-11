@@ -25,6 +25,15 @@ func NewAuthService(cfg *config.Config, db *database.DB) *AuthService {
 	}
 }
 
+func (s *AuthService) NeedsBootstrap() bool {
+        var count int
+        err := s.db.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
+        if err != nil {
+                return false
+        }
+        return count == 0
+}
+
 func (s *AuthService) Register(username, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password+s.config.PasswordPepper), bcrypt.DefaultCost)
 	if err != nil {
