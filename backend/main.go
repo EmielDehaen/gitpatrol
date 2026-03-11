@@ -33,6 +33,7 @@ func main() {
 	e.POST("/api/auth/register", register)
 	e.POST("/api/auth/login", login)
 	e.POST("/api/auth/logout", logout)
+	e.GET("/api/repositories/:id/badge", getHealthBadge)
 
 	// Protected API Group
 	api := e.Group("/api", AuthMiddleware)
@@ -44,7 +45,6 @@ func main() {
 	api.DELETE("/repositories/:id", deleteRepository)
 	api.POST("/repositories/:id/sync", syncRepositoryNow)
 	api.GET("/repositories/:id/readme", getReadme)
-	api.GET("/repositories/:id/badge", getHealthBadge)
 	api.GET("/repositories/:id/assets/*", getAsset)
 	api.GET("/incidents", getIncidents)
 	api.DELETE("/incidents", clearIncidents)
