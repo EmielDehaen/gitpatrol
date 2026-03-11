@@ -402,6 +402,66 @@ button.secondary:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
   color: var(--efinity-blue);
 }
 
+.notification-bell {
+  position: relative;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  padding: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--efinity-text-muted);
+  transition: all 0.3s;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.notification-bell:hover {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  border-color: var(--efinity-blue);
+}
+
+.notification-bell.has-incidents {
+  color: var(--status-red);
+  border-color: rgba(255, 77, 77, 0.2);
+  animation: bell-shake 0.5s ease-in-out 3; /* Shakes 3 times then stops */
+}
+
+.bell-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--status-red);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 900;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 10px rgba(255, 77, 77, 0.4);
+  border: 2px solid var(--efinity-dark);
+}
+
+@keyframes bell-shake {
+  0%, 100% { transform: rotate(0); }
+  10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
+  20%, 40%, 60%, 80% { transform: rotate(10deg); }
+}
+
+.incident-item {
+  background: rgba(255, 77, 77, 0.03);
+  border: 1px solid rgba(255, 77, 77, 0.1);
+  padding: 20px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  transition: all 0.3s;
+}
+
+.incident-item:hover {
+  background: rgba(255, 77, 77, 0.05);
+  border-color: rgba(255, 77, 77, 0.2);
+}
+
 /* Custom Tooltips */
 [data-tooltip] {
   position: relative;

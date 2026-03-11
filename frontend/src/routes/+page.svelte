@@ -37,6 +37,8 @@
   let newName = $state('');
   let intervalString = $state('1h');
   let autoPatrol = $state(true);
+  let incidents = $state<any[]>([]);
+  let showIncidentModal = $state(false);
 
   interface Toast { id: number; message: string; type: 'success' | 'error' | 'info'; }
   let toasts = $state<Toast[]>([]);
@@ -111,6 +113,21 @@
     const res = await fetch(`${API_URL}/api/repositories`);
     if (!res.ok) return;
     repositories = await res.json();
+  }
+
+  async function fetchIncidents() {
+    const res = await fetch(`${API_URL}/api/incidents`);
+    if (!res.ok) return;
+    incidents = await res.json();
+  }
+
+  async function clearIncidents() {
+    const res = await fetch(`${API_URL}/api/incidents`, { method: 'DELETE' });
+    if (res.ok) {
+      incidents = [];
+      showIncidentModal = false;
+      showToast('All incidents cleared.', 'info');
+    }
   }
 
   async function fetchMetadata(repo: Repository) {
@@ -268,8 +285,12 @@
 
   onMount(() => {
     fetchRepos();
+    fetchIncidents();
     const ws = new WebSocket('ws://localhost:8080/ws');
-    ws.onmessage = () => fetchRepos();
+    ws.onmessage = () => {
+      fetchRepos();
+      fetchIncidents();
+    };
     const timer = setInterval(() => {
       repositories = repositories.map(r => ({ ...r, progress: getProgress(r) }));
     }, 1000);
@@ -284,6 +305,10 @@
       <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em;">Tactical Asset Monitoring</p>
     </div>
     <div style="display: flex; gap: 24px; align-items: center;">
+      <div class="notification-bell" class:has-incidents={incidents.length > 0} onclick={() => showIncidentModal = true} data-tooltip="Security Logs">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        {#if incidents.length > 0}<div class="bell-count">{incidents.length}</div>{/if}
+      </div>
       <div class="view-toggle">
         <button class:active={viewMode === 'grid'} onclick={() => viewMode = 'grid'}>GRID</button>
         <button class:active={viewMode === 'list'} onclick={() => viewMode = 'list'}>LIST</button>
@@ -553,6 +578,38 @@
           <button style="flex: 2;" onclick={addRepo}>ACTIVATE</button>
           <button class="secondary" style="flex: 1;" onclick={() => { showAddModal = false; newUrl = ''; newName = ''; }}>CANCEL</button>
         </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if showIncidentModal}
+  <div class="modal-overlay" onclick={() => showIncidentModal = false}>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()} style="max-width: 600px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h2 style="margin: 0; font-size: 1.8rem; font-weight: 800;">Security Logs</h2>
+          <p style="color: var(--efinity-text-muted); margin: 4px 0 0 0; font-size: 0.8rem;">Historical synchronization incidents.</p>
+        </div>
+        <button class="secondary" onclick={clearIncidents} style="font-size: 0.7rem; padding: 10px 20px;">CLEAR ALL</button>
+      </div>
+      <div class="modal-body" style="max-height: 60vh;">
+        {#if incidents.length === 0}
+          <div style="text-align: center; padding: 40px; color: var(--efinity-text-muted);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 16px; opacity: 0.3;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <p>No incidents detected. All systems nominal.</p>
+          </div>
+        {:else}
+          {#each incidents as incident}
+            <div class="incident-item">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <div style="font-weight: 800; color: #fff; font-size: 0.9rem;">{incident.repo_name}</div>
+                <div style="font-size: 0.7rem; color: var(--efinity-text-muted);">{new Date(incident.created_at).toLocaleString()}</div>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--status-red); line-height: 1.4;">{incident.message}</div>
+            </div>
+          {/each}
+        {/if}
       </div>
     </div>
   </div>
