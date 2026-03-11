@@ -35,7 +35,6 @@ Built for the **Efinity** standard: minimalist, fast, and visually polished.
 Detailed documentation is available in the `docs/` folder:
 - [**Introduction**](docs/introduction.md) - What is GitPatrol and why use it.
 - [**Features**](docs/features.md) - Deep dive into core functionality.
-- [**API Reference**](docs/api.md) - Integration guide for plugins and 3rd party tools.
 - [**Architecture**](docs/architecture.md) - How the system works under the hood.
 - [**Setup & Installation**](docs/setup.md) - How to get GitPatrol running.
 
