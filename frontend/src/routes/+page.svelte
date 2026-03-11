@@ -325,11 +325,11 @@
       {#each repositories as repo (repo.id)}
         <div class="card" onclick={() => selectedRepo = repo}>
           <div style="position: absolute; top: 32px; right: 32px; display: flex; align-items: center; gap: 16px;">
-            <div class="radial-timer" data-tooltip={getRemainingTime(repo)}>
+            <div class="radial-timer" class:is-syncing={repo.status === 'syncing'} data-tooltip={getRemainingTime(repo)}>
               <svg width="40" height="40">
                 <circle cx="20" cy="20" r="16" />
                 <circle cx="20" cy="20" r="16" class="progress" class:active-pulse={repo.status !== 'syncing' && repo.auto_patrol === 1}
-                  style="stroke-dasharray: 100; stroke-dashoffset: {100 - (repo.progress || 0)}" />
+                  style="stroke-dasharray: 100; stroke-dashoffset: {repo.status === 'syncing' ? 0 : 100 - (repo.progress || 0)}" />
               </svg>
             </div>
             <div class="health-score" data-tooltip="Tactical Health Score" style="color: {repo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}44">
@@ -369,8 +369,8 @@
       {#each repositories as repo (repo.id)}
         <div class="list-item" onclick={() => selectedRepo = repo}>
           <div style="display: flex; align-items: center; gap: 24px;">
-            <div class="radial-timer" data-tooltip={getRemainingTime(repo)} style="width: 32px; height: 32px;">
-              <svg width="32" height="32"><circle cx="16" cy="16" r="12" /><circle cx="16" cy="16" r="12" class="progress" class:active-pulse={repo.status !== 'syncing' && repo.auto_patrol === 1} style="stroke-dasharray: 75; stroke-dashoffset: {75 - (repo.progress || 0) * 0.75}" /></svg>
+            <div class="radial-timer" class:is-syncing={repo.status === 'syncing'} data-tooltip={getRemainingTime(repo)} style="width: 32px; height: 32px;">
+              <svg width="32" height="32"><circle cx="16" cy="16" r="12" /><circle cx="16" cy="16" r="12" class="progress" class:active-pulse={repo.status !== 'syncing' && repo.auto_patrol === 1} style="stroke-dasharray: 75; stroke-dashoffset: {repo.status === 'syncing' ? 0 : 75 - (repo.progress || 0) * 0.75}" /></svg>
             </div>
             <img src={getAvatarUrl(repo.url)} onerror={handleAvatarError} alt="" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--glass-border);" />
             <div>
@@ -407,8 +407,8 @@
             <div>
               <div style="display: flex; align-items: center; gap: 16px;">
                 <h2 style="margin: 0; font-size: 2.2rem; font-weight: 800;">{selectedRepo.name}</h2>
-                <div class="radial-timer" data-tooltip={getRemainingTime(selectedRepo)} style="width: 32px; height: 32px;">
-                  <svg width="32" height="32"><circle cx="16" cy="16" r="12" /><circle cx="16" cy="16" r="12" class="progress" class:active-pulse={selectedRepo.status !== 'syncing' && selectedRepo.auto_patrol === 1} style="stroke-dasharray: 75; stroke-dashoffset: {75 - (selectedRepo.progress || 0) * 0.75}" /></svg>
+                <div class="radial-timer" class:is-syncing={selectedRepo.status === 'syncing'} data-tooltip={getRemainingTime(selectedRepo)} style="width: 32px; height: 32px;">
+                  <svg width="32" height="32"><circle cx="16" cy="16" r="12" /><circle cx="16" cy="16" r="12" class="progress" class:active-pulse={selectedRepo.status !== 'syncing' && selectedRepo.auto_patrol === 1} style="stroke-dasharray: 75; stroke-dashoffset: {selectedRepo.status === 'syncing' ? 0 : 75 - (selectedRepo.progress || 0) * 0.75}" /></svg>
                 </div>
                 <div class="badge" style="color: {selectedRepo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; background: rgba(255,255,255,0.03); font-size: 0.8rem; padding: 4px 12px; border: 1px solid rgba(255,255,255,0.05);">{selectedRepo.health_score}% HEALTH</div>
               </div>
