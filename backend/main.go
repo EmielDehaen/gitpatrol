@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -33,15 +32,7 @@ func main() {
 	e.DELETE("/api/incidents", clearIncidents)
 	e.Static("/avatars", "./data/avatars")
 
-	// Dynamic static assets from repositories
-	e.GET("/api/repositories/:id/assets/*", func(c echo.Context) error {
-		id := c.Param("id")
-		var name string
-		db.QueryRow("SELECT name FROM repositories WHERE id = ?", id).Scan(&name)
-		
-		filePath := c.Param("*")
-		return c.File(filepath.Join("./data", name, filePath))
-	})
+	e.GET("/api/repositories/:id/assets/*", getAsset)
 
 	// Scheduler
 	go func() {

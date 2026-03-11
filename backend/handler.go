@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -242,23 +243,99 @@ func getHealthBadge(c echo.Context) error {
 	return c.Blob(http.StatusOK, "image/svg+xml", []byte(svg))
 }
 
+func getAsset(c echo.Context) error {
+	id := c.Param("id")
+	var name, defaultBranch string
+	err := db.QueryRow("SELECT name, default_branch FROM repositories WHERE id = ?", id).Scan(&name, &defaultBranch)
+	if err != nil {
+		return err
+	}
+
+	filePath := c.Param("*")
+
+	// 1. If it's metadata (Issues/Releases JSON), serve from disk
+	if strings.HasPrefix(filePath, "metadata/") {
+		return c.File(filepath.Join("./data", name, filePath))
+	}
+
+	// 2. If it's Wiki, serve from the wiki git db (usually master/main in wiki repos)
+	if strings.HasPrefix(filePath, "wiki/") {
+		wikiPath := filepath.Join("./data", name, "wiki")
+		wikiFile := strings.TrimPrefix(filePath, "wiki/")
+		// Wikis are cloned as normal repos, so we can use HEAD or origin/master
+		return serveGitFile(c, wikiPath, "HEAD", wikiFile)
+	}
+
+	// 3. Otherwise, serve from main git db using the remote tracking branch
+	repoPath := filepath.Join("./data", name)
+	return serveGitFile(c, repoPath, "origin/"+defaultBranch, filePath)
+}
+
+func serveGitFile(c echo.Context, repoPath, ref, filePath string) error {
+	cmd := exec.Command("git", "-C", repoPath, "show", ref+":"+filePath)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		// Fallback to local HEAD if remote ref fails
+		cmd = exec.Command("git", "-C", repoPath, "show", "HEAD:"+filePath)
+		output, err = cmd.CombinedOutput()
+		if err != nil {
+			// Final fallback: check if it's physically on disk
+			return c.File(filepath.Join(repoPath, filePath))
+		}
+	}
+
+	// Detect mime type for correct rendering
+	ext := filepath.Ext(filePath)
+	mime := "text/plain"
+	switch strings.ToLower(ext) {
+	case ".png":
+		mime = "image/png"
+	case ".jpg", ".jpeg":
+		mime = "image/jpeg"
+	case ".gif":
+		mime = "image/gif"
+	case ".svg":
+		mime = "image/svg+xml"
+	case ".md":
+		mime = "text/markdown"
+	case ".json":
+		mime = "application/json"
+	}
+
+	return c.Blob(http.StatusOK, mime, output)
+}
+
 func getReadme(c echo.Context) error {
 	id := c.Param("id")
-	var name string
-	err := db.QueryRow("SELECT name FROM repositories WHERE id = ?", id).Scan(&name)
+	var name, defaultBranch string
+	err := db.QueryRow("SELECT name, default_branch FROM repositories WHERE id = ?", id).Scan(&name, &defaultBranch)
 	if err != nil {
 		return err
 	}
 
 	repoPath := filepath.Join("./data", name)
-	// Try common readme filenames
+	// Try common readme filenames using git show
 	filenames := []string{"README.md", "readme.md", "README.txt", "README"}
+	
+	// Try to get the latest from the remote tracking branch (fetched)
+	ref := "origin/" + defaultBranch
+	
 	for _, f := range filenames {
-		content, err := os.ReadFile(filepath.Join(repoPath, f))
+		cmd := exec.Command("git", "-C", repoPath, "show", ref+":"+f)
+		output, err := cmd.CombinedOutput()
 		if err == nil {
-			return c.String(http.StatusOK, string(content))
+			return c.String(http.StatusOK, string(output))
 		}
 	}
 
-	return c.String(http.StatusNotFound, "No README found")
+	// Fallback to local HEAD if remote ref fails
+	for _, f := range filenames {
+		cmd := exec.Command("git", "-C", repoPath, "show", "HEAD:"+f)
+		output, err := cmd.CombinedOutput()
+		if err == nil {
+			return c.String(http.StatusOK, string(output))
+		}
+	}
+
+	return c.String(http.StatusNotFound, "No README found in Git database")
 }
