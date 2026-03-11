@@ -73,12 +73,65 @@ h1 {
   border-radius: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
 }
 
 .view-toggle button.active {
   background: var(--efinity-blue);
   color: #fff;
   box-shadow: 0 4px 15px var(--efinity-blue-glow);
+}
+
+/* User Profile Bubble */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  padding: 4px 16px 4px 4px;
+  border-radius: 32px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.user-profile:hover {
+  border-color: var(--efinity-blue);
+  background: rgba(255,255,255,0.05);
+}
+
+.avatar-circle {
+  width: 32px;
+  height: 32px;
+  background: var(--efinity-blue);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  box-shadow: 0 0 15px var(--efinity-blue-glow);
+}
+
+.user-info {
+  text-align: left;
+}
+
+.user-name {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  display: block;
+}
+
+.user-role {
+  font-size: 0.6rem;
+  color: var(--efinity-text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
 }
 
 /* Grid & Cards */
@@ -434,6 +487,11 @@ button.secondary:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
   background: rgba(255,255,255,0.06);
   color: #fff;
   border-color: var(--efinity-blue);
+}
+
+.notification-bell.logout-btn:hover {
+  color: var(--status-red);
+  border-color: var(--status-red);
 }
 
 .notification-bell.has-incidents {
