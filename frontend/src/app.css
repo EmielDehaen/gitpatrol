@@ -90,7 +90,7 @@ h1 {
   gap: 12px;
   background: var(--glass);
   border: 1px solid var(--glass-border);
-  padding: 6px 16px 6px 6px;
+  padding: 4px 16px 4px 4px;
   border-radius: 32px;
   cursor: pointer;
   transition: all 0.3s;
@@ -487,6 +487,11 @@ button.secondary:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
   background: rgba(255,255,255,0.06);
   color: #fff;
   border-color: var(--efinity-blue);
+}
+
+.notification-bell.logout-btn:hover {
+  color: var(--status-red);
+  border-color: var(--status-red);
 }
 
 .notification-bell.has-incidents {
