@@ -168,8 +168,15 @@ func updateStatus(id int, status, errMsg string) {
 		var repoName string
 		db.QueryRow("SELECT name FROM repositories WHERE id = ?", id).Scan(&repoName)
 
-		// 1. Permanent Failure Handling: If repo is not found, disable auto patrol
-		if strings.Contains(strings.ToLower(errMsg), "not found") {
+		// 1. Permanent Failure Handling: Disable auto patrol for non-recoverable errors
+		lowerMsg := strings.ToLower(errMsg)
+		isPermanent := strings.Contains(lowerMsg, "not found") || 
+			strings.Contains(lowerMsg, "access denied") || 
+			strings.Contains(lowerMsg, "invalid repository") || 
+			strings.Contains(lowerMsg, "already in use") ||
+			strings.Contains(lowerMsg, "authentication failed")
+
+		if isPermanent {
 			db.Exec("UPDATE repositories SET auto_patrol = 0 WHERE id = ?", id)
 			log.Printf("[SYNC] Disabled auto_patrol for %s due to permanent failure: %s", repoName, errMsg)
 		}
