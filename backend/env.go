@@ -12,9 +12,6 @@ import (
 const EnvFilePath = "./db/gitpatrol.env"
 
 func initEnv() {
-	// Ensure directory exists before loading/saving
-	os.MkdirAll("./db", 0755)
-
 	// Try to load existing env
 	_ = godotenv.Load(EnvFilePath)
 
@@ -41,14 +38,6 @@ func saveEnv() {
 	env := map[string]string{
 		"JWT_SECRET":       os.Getenv("JWT_SECRET"),
 		"PASSWORD_PEPPER": os.Getenv("PASSWORD_PEPPER"),
-	}
-
-	// Also include MASTER_KEY for future use if it exists
-	if mk := os.Getenv("MASTER_KEY"); mk != "" {
-		env["MASTER_KEY"] = mk
-	} else {
-		env["MASTER_KEY"] = generateRandomString(16)
-		os.Setenv("MASTER_KEY", env["MASTER_KEY"])
 	}
 
 	err := godotenv.Write(env, EnvFilePath)
