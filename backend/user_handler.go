@@ -24,9 +24,14 @@ func register(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, map[string]string{"error": "Registration is closed (Community Edition: Single User Only)."})
 	}
 
-	hash, _ := hashPassword(input.Password)
+	hash, err := hashPassword(input.Password)
+	if err != nil {
+		fmt.Printf("[AUTH] Password hashing failed: %v\n", err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Password too long."})
+	}
 	res, err := db.Exec("INSERT INTO users (username, password_hash) VALUES (?, ?)", input.Username, hash)
 	if err != nil {
+		fmt.Printf("[AUTH] User registration failed: %v\n", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Username already exists."})
 	}
 
@@ -72,6 +77,7 @@ func logout(c echo.Context) error {
 }
 
 func setAuthCookie(c echo.Context, token string) {
+	secure := os.Getenv("GP_SECURE_COOKIE") == "true"
 	cookie := &http.Cookie{
 		Name:     "session_token",
 		Value:    token,
@@ -79,7 +85,7 @@ func setAuthCookie(c echo.Context, token string) {
 		HttpOnly: true,
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
-		// Secure: false by default for local Community setups without HTTPS
+		Secure:   secure,
 	}
 	c.SetCookie(cookie)
 }
