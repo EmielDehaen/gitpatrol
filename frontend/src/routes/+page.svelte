@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { marked } from 'marked';
+  import { fade } from 'svelte/transition';
 
   interface Repository {
     id: number;
@@ -32,10 +33,35 @@
   let releases = $state<any[]>([]);
   let readmeExpanded = $state(false);
   let showAddModal = $state(false);
-  let newName = $state('');
   let newUrl = $state('');
+  let newName = $state('');
   let intervalString = $state('1h');
   let autoPatrol = $state(true);
+
+  function suggestName(url: string) {
+    if (!url) return '';
+    // Normalize basic cases for the suggestion
+    let cleanUrl = url.trim().replace(/\/$/, '');
+    if (cleanUrl.includes('github.com/')) {
+      const parts = cleanUrl.split('github.com/')[1].split('/');
+      if (parts.length >= 2) return parts[1].replace('.git', '');
+    } else if (cleanUrl.includes('gitlab.com/')) {
+      const parts = cleanUrl.split('gitlab.com/')[1].split('/');
+      if (parts.length >= 2) return parts[parts.length - 1].replace('.git', '');
+    } else if (cleanUrl.includes(':')) { // SSH format
+      const parts = cleanUrl.split(':');
+      const repoParts = parts[parts.length - 1].split('/');
+      return repoParts[repoParts.length - 1].replace('.git', '');
+    }
+    const parts = cleanUrl.split('/');
+    return parts[parts.length - 1].replace('.git', '') || '';
+  }
+
+  $effect(() => {
+    if (newUrl && !newName) {
+      newName = suggestName(newUrl);
+    }
+  });
 
   const API_URL = 'http://localhost:8080';
 
@@ -451,15 +477,20 @@
 {/if}
 
 {#if showAddModal}
-  <div class="modal-overlay" onclick={() => showAddModal = false}>
+  <div class="modal-overlay" onclick={() => { showAddModal = false; newUrl = ''; newName = ''; }}>
     <div class="modal-content" onclick={(e) => e.stopPropagation()} style="max-width: 540px;">
       <div class="modal-header"><h2 style="margin: 0; font-size: 1.8rem; font-weight: 800;">Deploy New Patrol</h2><p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-size: 0.9rem;">Configure a new asset for monitoring.</p></div>
       <div class="modal-body">
-        <label>DISPLAY NAME</label>
-        <input bind:value={newName} placeholder="e.g. efinity-frontend" />
         <label>REPOSITORY URL</label>
-        <input bind:value={newUrl} placeholder="https://github.com/..." />
+        <input bind:value={newUrl} placeholder="https://github.com/hoppscotch/hoppscotch" />
         
+        {#if newUrl.length > 3}
+          <div transition:fade>
+            <label>DISPLAY NAME (SUGGESTED)</label>
+            <input bind:value={newName} placeholder="e.g. hoppscotch" />
+          </div>
+        {/if}
+
         <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; border: 1px solid var(--glass-border);">
           <div>
             <div style="font-weight: 700; font-size: 0.9rem;">KEEP ACTIVE PATROL</div>
@@ -475,7 +506,7 @@
 
         <div style="display: flex; gap: 16px; margin-top: 32px;">
           <button style="flex: 2;" onclick={addRepo}>ACTIVATE</button>
-          <button class="secondary" style="flex: 1;" onclick={() => showAddModal = false}>CANCEL</button>
+          <button class="secondary" style="flex: 1;" onclick={() => { showAddModal = false; newUrl = ''; newName = ''; }}>CANCEL</button>
         </div>
       </div>
     </div>

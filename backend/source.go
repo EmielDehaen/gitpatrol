@@ -129,13 +129,44 @@ func (s *GitLabSource) SyncIssues(url string, destPath string) error { return ni
 func (s *GitLabSource) SyncReleases(url string, destPath string) error { return nil }
 
 func GetSource(url string) (Source, error) {
-	if strings.Contains(url, "github.com") {
+	normalized := NormalizeURL(url)
+	if strings.Contains(normalized, "github.com") {
 		return &GitHubSource{}, nil
 	}
-	if strings.Contains(url, "gitlab.com") {
+	if strings.Contains(normalized, "gitlab.com") {
 		return &GitLabSource{}, nil
 	}
 	return nil, fmt.Errorf("unknown source for URL: %s", url)
+}
+
+func NormalizeURL(url string) string {
+	u := strings.TrimSpace(url)
+	u = strings.TrimSuffix(u, ".git")
+
+	// 1. Handle SSH format (git@github.com:user/repo)
+	if strings.HasPrefix(u, "git@") {
+		u = strings.Replace(u, ":", "/", 1)
+		u = strings.Replace(u, "git@", "https://", 1)
+	}
+
+	// 2. Handle GitHub/GitLab tree/blob sub-paths (browser pasted)
+	// Example: https://github.com/hoppscotch/hoppscotch/tree/main/packages/hoppscotch-app
+	if strings.Contains(u, "/tree/") {
+		u = strings.Split(u, "/tree/")[0]
+	}
+	if strings.Contains(u, "/blob/") {
+		u = strings.Split(u, "/blob/")[0]
+	}
+
+	// 3. Handle shorthand (user/repo -> github.com/user/repo)
+	if !strings.HasPrefix(u, "http") && strings.Contains(u, "/") {
+		parts := strings.Split(u, "/")
+		if len(parts) == 2 {
+			u = "https://github.com/" + u
+		}
+	}
+
+	return u
 }
 
 func downloadAvatar(url string, username string) error {

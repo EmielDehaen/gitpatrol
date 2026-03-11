@@ -105,13 +105,15 @@ func addRepository(c echo.Context) error {
 	if err := c.Bind(&r); err != nil {
 		return err
 	}
-	
-	result, err := db.Exec("INSERT INTO repositories (name, url, interval_minutes, auto_patrol) VALUES (?, ?, ?, ?)", r.Name, r.URL, r.IntervalMinutes, r.AutoPatrol)
+
+	r.URL = NormalizeURL(r.URL)
+
+	res, err := db.Exec("INSERT INTO repositories (name, url, interval_minutes, status, auto_patrol) VALUES (?, ?, ?, ?, ?)", r.Name, r.URL, r.IntervalMinutes, "pending", r.AutoPatrol)
 	if err != nil {
 		return err
 	}
-	
-	id, _ := result.LastInsertId()
+
+	id, _ := res.LastInsertId()
 	go syncRepo(int(id), r.URL, r.Name)
 	
 	return c.JSON(http.StatusCreated, map[string]int{"id": int(id)})
