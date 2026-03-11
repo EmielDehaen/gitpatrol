@@ -163,6 +163,13 @@ func calculateHealthScore(meta Metadata, historyStr string, lastCommitDate time.
 
 func updateStatus(id int, status, errMsg string) {
 	db.Exec("UPDATE repositories SET status = ?, error_message = ? WHERE id = ?", status, errMsg, id)
+	
+	if status == "error" {
+		var repoName string
+		db.QueryRow("SELECT name FROM repositories WHERE id = ?", id).Scan(&repoName)
+		db.Exec("INSERT INTO incidents (repo_id, repo_name, message, created_at) VALUES (?, ?, ?, ?)", id, repoName, errMsg, time.Now())
+	}
+	
 	broadcastStatus(id, status, errMsg)
 }
 

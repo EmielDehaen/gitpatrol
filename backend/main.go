@@ -28,6 +28,9 @@ func main() {
 	e.DELETE("/api/repositories/:id", deleteRepository)
 	e.POST("/api/repositories/:id/sync", syncRepositoryNow)
 	e.GET("/api/repositories/:id/readme", getReadme)
+	e.GET("/api/repositories/:id/badge", getHealthBadge)
+	e.GET("/api/incidents", getIncidents)
+	e.DELETE("/api/incidents", clearIncidents)
 	e.Static("/avatars", "./data/avatars")
 
 	// Dynamic static assets from repositories

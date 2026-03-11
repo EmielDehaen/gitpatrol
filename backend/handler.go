@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -174,6 +175,71 @@ func syncRepositoryNow(c echo.Context) error {
 	go syncRepo(repoID, url, name)
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "Syncing started"})
+}
+
+func getIncidents(c echo.Context) error {
+	rows, err := db.Query("SELECT id, repo_id, repo_name, message, created_at FROM incidents WHERE resolved = 0 ORDER BY created_at DESC")
+	if err != nil { return err }
+	defer rows.Close()
+
+	type Incident struct {
+		ID        int       `json:"id"`
+		RepoID    int       `json:"repo_id"`
+		RepoName  string    `json:"repo_name"`
+		Message   string    `json:"message"`
+		CreatedAt time.Time `json:"created_at"`
+	}
+
+	incidents := []Incident{}
+	for rows.Next() {
+		var i Incident
+		rows.Scan(&i.ID, &i.RepoID, &i.RepoName, &i.Message, &i.CreatedAt)
+		incidents = append(incidents, i)
+	}
+	return c.JSON(http.StatusOK, incidents)
+}
+
+func clearIncidents(c echo.Context) error {
+	_, err := db.Exec("UPDATE incidents SET resolved = 1")
+	if err != nil { return err }
+	return c.NoContent(http.StatusNoContent)
+}
+
+func getHealthBadge(c echo.Context) error {
+	id := c.Param("id")
+	var name string
+	var score int
+	err := db.QueryRow("SELECT name, health_score FROM repositories WHERE id = ?", id).Scan(&name, &score)
+	if err != nil {
+		return c.String(http.StatusNotFound, "Not found")
+	}
+
+	color := "#ff4d4d" // Red
+	if score > 70 {
+		color = "#00ff88" // Green
+	} else if score > 40 {
+		color = "#ffcc00" // Yellow
+	}
+
+	svg := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="20" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <linearGradient id="a" x2="0" y2="100%%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <rect rx="3" width="120" height="20" fill="#555"/>
+  <rect rx="3" x="70" width="50" height="20" fill="%s"/>
+  <path fill="%s" d="M70 0h4v20H70z"/>
+  <rect rx="3" width="120" height="20" fill="url(#a)"/>
+  <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
+    <text x="35" y="15" fill="#010101" fill-opacity=".3">GitPatrol</text>
+    <text x="35" y="14">GitPatrol</text>
+    <text x="95" y="15" fill="#010101" fill-opacity=".3">%d%%</text>
+    <text x="95" y="14">%d%%</text>
+  </g>
+</svg>`, color, color, score, score)
+
+	return c.Blob(http.StatusOK, "image/svg+xml", []byte(svg))
 }
 
 func getReadme(c echo.Context) error {
