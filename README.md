@@ -26,7 +26,6 @@ Built for the **Efinity** standard: minimalist, fast, and visually polished.
 Detailed documentation is available in the `docs/` folder:
 - [**Architecture**](docs/architecture.md) - How the system works under the hood.
 - [**Setup & Installation**](docs/setup.md) - How to get GitPatrol running.
-- [**Roadmap**](docs/roadmap.md) - The vision and future features.
 
 ---
 
