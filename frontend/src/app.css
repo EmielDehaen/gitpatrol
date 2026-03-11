@@ -478,6 +478,87 @@ button.secondary:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
   border-color: rgba(255, 77, 77, 0.2);
 }
 
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--efinity-blue);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 30px var(--efinity-blue-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fab:hover {
+  transform: scale(1.1) translateY(-5px);
+  box-shadow: 0 15px 40px var(--efinity-blue-glow);
+}
+
+.fab svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* User Profile Bubble */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  padding: 6px 16px 6px 6px;
+  border-radius: 32px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.user-profile:hover {
+  border-color: var(--efinity-blue);
+  background: rgba(255,255,255,0.05);
+}
+
+.avatar-circle {
+  width: 32px;
+  height: 32px;
+  background: var(--efinity-blue);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  box-shadow: 0 0 15px var(--efinity-blue-glow);
+}
+
+.user-info {
+  text-align: left;
+}
+
+.user-name {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  display: block;
+}
+
+.user-role {
+  font-size: 0.6rem;
+  color: var(--efinity-text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
 /* Custom Tooltips */
 [data-tooltip] {
   position: relative;

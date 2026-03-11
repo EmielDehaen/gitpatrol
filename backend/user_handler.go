@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -81,6 +82,45 @@ func setAuthCookie(c echo.Context, token string) {
 		// Secure: false by default for local Community setups without HTTPS
 	}
 	c.SetCookie(cookie)
+}
+
+func updateUser(c echo.Context) error {
+	userID := c.Get("user_id").(int)
+	var input struct {
+		Username    string `json:"username"`
+		OldPassword string `json:"old_password"`
+		NewPassword string `json:"new_password"`
+	}
+	if err := c.Bind(&input); err != nil {
+		return err
+	}
+
+	if input.NewPassword != "" {
+		var currentHash string
+		err := db.QueryRow("SELECT password_hash FROM users WHERE id = ?", userID).Scan(&currentHash)
+		if err != nil || !checkPasswordHash(input.OldPassword, currentHash) {
+			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Current password incorrect."})
+		}
+		newHash, _ := hashPassword(input.NewPassword)
+		_, err = db.Exec("UPDATE users SET username = ?, password_hash = ? WHERE id = ?", input.Username, newHash, userID)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Update failed (Username might exist)."})
+		}
+	} else {
+		_, err := db.Exec("UPDATE users SET username = ? WHERE id = ?", input.Username, userID)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Update failed (Username might exist)."})
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"username": input.Username})
+}
+
+func getMe(c echo.Context) error {
+	userID := c.Get("user_id").(int)
+	var username string
+	db.QueryRow("SELECT username FROM users WHERE id = ?", userID).Scan(&username)
+	return c.JSON(http.StatusOK, map[string]string{"id": fmt.Sprintf("%d", userID), "username": username})
 }
 
 func checkAuthStatus(c echo.Context) error {

@@ -36,6 +36,8 @@ func main() {
 
 	// Protected API Group
 	api := e.Group("/api", AuthMiddleware)
+	api.GET("/me", getMe)
+	api.PATCH("/user", updateUser)
 	api.GET("/repositories", getRepositories)
 	api.POST("/repositories", addRepository)
 	api.PATCH("/repositories/:id", updateRepository)
