@@ -37,6 +37,16 @@ func syncRepo(id int, url, name string) {
 		if meta.Username != "" {
 			downloadAvatar(meta.AvatarURL, meta.Username)
 		}
+
+		// Sync Wiki
+		if wikiURL, exists := source.GetWikiURL(url); exists {
+			syncWiki(wikiURL, name)
+		}
+
+		// Sync Non-Git Metadata (Issues, Releases)
+		metadataPath := filepath.Join("./data", name, "metadata")
+		source.SyncIssues(url, metadataPath)
+		source.SyncReleases(url, metadataPath)
 	}
 
 	history := getCommitHistory(repoPath)
@@ -69,6 +79,17 @@ func syncRepo(id int, url, name string) {
 		time.Now(), lastCommits, meta.Stars, meta.Forks, meta.OpenIssues, history, score, defaultBranch, id)
 	
 	broadcastStatus(id, "synced", "")
+}
+
+func syncWiki(url string, name string) {
+	wikiPath := filepath.Join("./data", name, "wiki")
+	if _, err := os.Stat(wikiPath); os.IsNotExist(err) {
+		// Try to clone, but don't fail if wiki doesn't exist (returns 128)
+		cmd := exec.Command("git", "clone", url, wikiPath)
+		cmd.Run()
+	} else {
+		exec.Command("git", "-C", wikiPath, "fetch", "--all", "--tags", "--force").Run()
+	}
 }
 
 func getCommitHistory(repoPath string) string {
