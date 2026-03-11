@@ -65,7 +65,7 @@ func main() {
 				}
 				rows.Close()
 			}
-			time.Sleep(10 * time.Second)
+			time.Sleep(1 * time.Minute)
 		}
 	}()
 
