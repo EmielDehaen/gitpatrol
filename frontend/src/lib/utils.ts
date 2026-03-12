@@ -74,12 +74,23 @@ export function getProgress(repo: any) {
 export function getRemainingTime(repo: any) {
   if (repo.auto_patrol === 0) return 'Manual Patrol Only';
   if (!repo.last_sync || repo.status === 'syncing') return 'Syncing...';
+  
   const lastSync = new Date(repo.last_sync).getTime();
   const nextSync = lastSync + repo.interval_minutes * 60000;
-  const remaining = nextSync - Date.now();
-  if (remaining <= 0) return 'Syncing...';
-  const mins = Math.floor(remaining / 60000);
-  const secs = Math.floor((remaining % 60000) / 1000);
-  return `Next sync in: ${mins}m ${secs}s`;
+  const remainingMs = nextSync - Date.now();
+  
+  if (remainingMs <= 0) return 'Syncing...';
+  
+  const d = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+  const h = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const m = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+  const s = Math.floor((remainingMs % (1000 * 60)) / 1000);
+  
+  let parts = [];
+  if (d > 0) parts.push(`${d}d`);
+  if (h > 0) parts.push(`${h}h`);
+  if (m > 0) parts.push(`${m}m`);
+  if (s > 0 || parts.length === 0) parts.push(`${s}s`);
+  
+  return `Next sync in: ${parts.join(' ')}`;
 }
-

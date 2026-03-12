@@ -83,7 +83,7 @@
     </div>
     <div class="info-item" style="text-align: right;">
       <label>Interval</label>
-      <span>{repo.interval_minutes}m</span>
+      <span>{minutesToHuman(repo.interval_minutes)}</span>
     </div>
   </div>
 </div>
