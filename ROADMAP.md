@@ -64,6 +64,3 @@ This document outlines the development milestones for **GitPatrol**, an autonomo
     - **Logic:** Allow users to set global tokens (e.g., `GP_GITHUB_TOKEN`, `GP_GITLAB_TOKEN`) via `.env`.
     - **Feature:** Automatically inject these tokens into sync requests to avoid rate limits and allow cloning of private repositories (within the user's scope).
     - **Security:** Ensure tokens are only used for the intended provider and never logged.
-
----
-*Inspired by [cooperspencer/gickup](https://github.com/cooperspencer/gickup)*
