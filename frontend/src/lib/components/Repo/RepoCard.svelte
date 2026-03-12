@@ -1,6 +1,6 @@
 <script lang="ts">
   import { type Repository } from '$lib/types';
-  import { getAvatarUrl, getRemainingTime, getProgress, isSyncing } from '$lib/utils';
+  import { getAvatarUrl, getRemainingTime, getProgress, isSyncing, minutesToHuman } from '$lib/utils';
   import { API_URL, api } from '$lib/api.svelte';
 
   let { repo, selectedRepo = $bindable() } = $props<{ repo: Repository, selectedRepo: Repository | null }>();
