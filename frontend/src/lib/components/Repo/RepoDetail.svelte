@@ -85,107 +85,109 @@
 </script>
 
 <div class="modal-overlay" onclick={() => selectedRepo = null} transition:fade>
-  <div class="modal-content" onclick={(e) => e.stopPropagation()}>
-    <div class="modal-header">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div>
-          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
-            <h2 style="font-size: 2.5rem; margin: 0; letter-spacing: -0.04em;">{repo?.name || 'Unknown'}</h2>
-            <div class="health-score" style="border-color: {(repo?.health_score || 0) > 70 ? 'var(--status-green)' : (repo?.health_score || 0) > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}">
-              {repo?.health_score || 0}%
-            </div>
-          </div>
-          <p style="color: var(--efinity-text-muted); font-size: 0.9rem; font-weight: 600; font-family: monospace;">{repo?.url || ''}</p>
-        </div>
-        <div style="display: flex; gap: 16px;">
-          <button class="secondary" style="padding: 10px; border-radius: 12px; color: var(--status-green); border-color: rgba(0, 255, 136, 0.2);" onclick={syncNow} data-tooltip="Sync Now">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.3 0 6.1 2 7.3 4.9M22 12c0 4.4-3.6 8-8 8-3.3 0-6.1-2-7.3-4.9"/></svg>
-          </button>
-          <button class="secondary" style="padding: 10px; border-radius: 12px;" onclick={() => showConfigModal = true} data-tooltip="Settings">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          </button>
-          <button class="secondary" style="padding: 10px; border-radius: 12px;" onclick={() => selectedRepo = null} data-tooltip="Close">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-body">
-      <div class="tab-container">
-        <button class="tab-btn" class:active={activeTab === 'readme'} onclick={() => activeTab = 'readme'}>BRIEFING</button>
-        <button class="tab-btn" class:active={activeTab === 'issues'} onclick={() => activeTab = 'issues'}>
-          INTEL <span class="tab-count">{issues.length}</span>
-        </button>
-        <button class="tab-btn" class:active={activeTab === 'releases'} onclick={() => activeTab = 'releases'}>
-          CHRONICLE <span class="tab-count">{releases.length}</span>
-        </button>
-        <button class="tab-btn" class:active={activeTab === 'wiki'} onclick={() => activeTab = 'wiki'}>WIKI</button>
-        <button class="tab-btn" class:active={activeTab === 'logs'} onclick={() => activeTab = 'logs'}>LOGS</button>
-      </div>
-
-      {#if activeTab === 'readme'}
-        <div class="readme-container" class:readme-expanded={readmeExpanded}>
-          <div class="readme-content">
-            {@html readmeContent}
-          </div>
-          {#if !readmeExpanded}
-            <div class="readme-fade">
-              <button class="secondary" style="font-size: 0.65rem; padding: 12px 24px;" onclick={() => readmeExpanded = true}>READ FULL MISSION BRIEFING</button>
-            </div>
-          {/if}
-        </div>
-      {:else if activeTab === 'issues'}
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-          {#each issues as issue}
-            <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px; opacity: {issue.state === 'closed' ? 0.6 : 1}">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                <div style="font-weight: 700; font-size: 1.1rem; color: #fff;">{issue.title}</div>
-                <span class="badge" style="color: {issue.state === 'open' ? 'var(--status-green)' : 'var(--efinity-text-muted)'}; background: {issue.state === 'open' ? 'rgba(0, 255, 136, 0.05)' : 'rgba(255,255,255,0.03)'}">{issue.state.toUpperCase()}</span>
+  {#if repo}
+    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+      <div class="modal-header">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+              <h2 style="font-size: 2.5rem; margin: 0; letter-spacing: -0.04em;">{repo.name}</h2>
+              <div class="health-score" style="border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}">
+                {repo.health_score}%
               </div>
-              <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">#{issue.number} opened by {issue.user?.login} • {new Date(issue.created_at).toLocaleDateString()}</div>
             </div>
-          {:else}
-            <p style="color: var(--efinity-text-muted); text-align: center; padding: 40px;">No tactical issues found in this sector.</p>
-          {/each}
+            <p style="color: var(--efinity-text-muted); font-size: 0.9rem; font-weight: 600; font-family: monospace;">{repo.url}</p>
+          </div>
+          <div style="display: flex; gap: 16px;">
+            <button class="secondary" style="padding: 10px; border-radius: 12px; color: var(--status-green); border-color: rgba(0, 255, 136, 0.2);" onclick={syncNow} data-tooltip="Sync Now">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.3 0 6.1 2 7.3 4.9M22 12c0 4.4-3.6 8-8 8-3.3 0-6.1-2-7.3-4.9"/></svg>
+            </button>
+            <button class="secondary" style="padding: 10px; border-radius: 12px;" onclick={() => showConfigModal = true} data-tooltip="Settings">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+            <button class="secondary" style="padding: 10px; border-radius: 12px;" onclick={() => selectedRepo = null} data-tooltip="Close">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
         </div>
-      {:else if activeTab === 'releases'}
-        <div style="display: flex; flex-direction: column; gap: 24px;">
-          {#each releases as release}
-            <div style="background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid var(--glass-border); padding: 24px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--glass-border); padding-bottom: 16px;">
-                <div>
-                  <div style="font-size: 1.4rem; font-weight: 800; color: var(--efinity-blue);">{release.tag_name}</div>
-                  <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">{release.name || ''} • {new Date(release.published_at).toLocaleDateString()}</div>
+      </div>
+
+      <div class="modal-body">
+        <div class="tab-container">
+          <button class="tab-btn" class:active={activeTab === 'readme'} onclick={() => activeTab = 'readme'}>BRIEFING</button>
+          <button class="tab-btn" class:active={activeTab === 'issues'} onclick={() => activeTab = 'issues'}>
+            INTEL <span class="tab-count">{issues.length}</span>
+          </button>
+          <button class="tab-btn" class:active={activeTab === 'releases'} onclick={() => activeTab = 'releases'}>
+            CHRONICLE <span class="tab-count">{releases.length}</span>
+          </button>
+          <button class="tab-btn" class:active={activeTab === 'wiki'} onclick={() => activeTab = 'wiki'}>WIKI</button>
+          <button class="tab-btn" class:active={activeTab === 'logs'} onclick={() => activeTab = 'logs'}>LOGS</button>
+        </div>
+
+        {#if activeTab === 'readme'}
+          <div class="readme-container" class:readme-expanded={readmeExpanded}>
+            <div class="readme-content">
+              {@html readmeContent}
+            </div>
+            {#if !readmeExpanded}
+              <div class="readme-fade">
+                <button class="secondary" style="font-size: 0.65rem; padding: 12px 24px;" onclick={() => readmeExpanded = true}>READ FULL MISSION BRIEFING</button>
+              </div>
+            {/if}
+          </div>
+        {:else if activeTab === 'issues'}
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            {#each issues as issue}
+              <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px; opacity: {issue.state === 'closed' ? 0.6 : 1}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                  <div style="font-weight: 700; font-size: 1.1rem; color: #fff;">{issue.title}</div>
+                  <span class="badge" style="color: {issue.state === 'open' ? 'var(--status-green)' : 'var(--efinity-text-muted)'}; background: {issue.state === 'open' ? 'rgba(0, 255, 136, 0.05)' : 'rgba(255,255,255,0.03)'}">{issue.state.toUpperCase()}</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">#{issue.number} opened by {issue.user?.login} • {new Date(issue.created_at).toLocaleDateString()}</div>
+              </div>
+            {:else}
+              <p style="color: var(--efinity-text-muted); text-align: center; padding: 40px;">No tactical issues found in this sector.</p>
+            {/each}
+          </div>
+        {:else if activeTab === 'releases'}
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            {#each releases as release}
+              <div style="background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid var(--glass-border); padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--glass-border); padding-bottom: 16px;">
+                  <div>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--efinity-blue);">{release.tag_name}</div>
+                    <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">{release.name || ''} • {new Date(release.published_at).toLocaleDateString()}</div>
+                  </div>
+                </div>
+                <div class="readme-content" style="font-size: 0.9rem;">{@html marked.parse(release.body || '')}</div>
+              </div>
+            {:else}
+              <p style="color: var(--efinity-text-muted); text-align: center; padding: 40px;">No historical chronicles (releases) found.</p>
+            {/each}
+          </div>
+        {:else if activeTab === 'wiki'}
+          <div class="readme-container readme-expanded">
+            <div class="readme-content">
+              {@html wikiContent}
+            </div>
+          </div>
+        {:else if activeTab === 'logs'}
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            {#each parseCommits(repo.last_commit || '') as commit}
+              <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                  {#if commit.branch}<span class="branch-badge">{commit.branch}</span>{/if}
+                  <span style="font-weight: 600; font-size: 1rem;">{commit.message}</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--efinity-text-muted); font-weight: 500;">
+                  {commit.author} • {commit.date} • <span style="color: var(--efinity-blue); font-family: monospace;">{commit.hash.substring(0,7)}</span>
                 </div>
               </div>
-              <div class="readme-content" style="font-size: 0.9rem;">{@html marked.parse(release.body || '')}</div>
-            </div>
-          {:else}
-            <p style="color: var(--efinity-text-muted); text-align: center; padding: 40px;">No historical chronicles (releases) found.</p>
-          {/each}
-        </div>
-      {:else if activeTab === 'wiki'}
-        <div class="readme-container readme-expanded">
-          <div class="readme-content">
-            {@html wikiContent}
+            {/each}
           </div>
-        </div>
-      {:else if activeTab === 'logs'}
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          {#each parseCommits(repo?.last_commit || '') as commit}
-            <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                {#if commit.branch}<span class="branch-badge">{commit.branch}</span>{/if}
-                <span style="font-weight: 600; font-size: 1rem;">{commit.message}</span>
-              </div>
-              <div style="font-size: 0.8rem; color: var(--efinity-text-muted); font-weight: 500;">
-                {commit.author} • {commit.date} • <span style="color: var(--efinity-blue); font-family: monospace;">{commit.hash.substring(0,7)}</span>
-              </div>
-            </div>
-          {/each}
-        </div>
-      {/if}
+        {/if}
+      </div>
     </div>
-  </div>
+  {/if}
 </div>
