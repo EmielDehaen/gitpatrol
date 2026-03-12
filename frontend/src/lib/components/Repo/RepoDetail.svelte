@@ -5,7 +5,7 @@
   import { API_URL, api } from '$lib/api.svelte';
   import { fade } from 'svelte/transition';
 
-  let { repo = $bindable(), selectedRepo = $bindable(), showConfigModal = $bindable() } = $props<{ repo: Repository, selectedRepo: Repository | null, showConfigModal: boolean }>();
+  let { repo = $bindable(), selectedRepo = $bindable(), showConfigModal = $bindable() } = $props<{ repo: Repository | null, selectedRepo: Repository | null, showConfigModal: boolean }>();
 
   let activeTab = $state<'readme' | 'issues' | 'releases' | 'wiki' | 'logs'>('readme');
   let readmeContent = $state('Loading mission briefing...');
@@ -15,6 +15,7 @@
   let readmeExpanded = $state(false);
 
   async function fetchMetadata() {
+    if (!repo) return;
     const assetBase = `/api/repositories/${repo.id}/assets/`;
     try {
       const issuesRes = await api.apiFetch(`${assetBase}metadata/issues.json`);
@@ -33,6 +34,7 @@
   }
 
   async function fetchReadme() {
+    if (!repo) return;
     readmeContent = 'Loading mission briefing...';
     readmeExpanded = false;
     try {
@@ -42,7 +44,7 @@
         const assetBase = `${API_URL}/api/repositories/${repo.id}/assets/`;
         
         text = text.replace(/!\[([^\]]*)\]\((?!(?:http|https|ftp|data:))(?:\.\/)?([^)]+)\)/gi, `![$1](${assetBase}$2)`);
-        text = text.replace(/<img([^>]+)src=["'](?!(?:http|https|ftp))(?:\.\/)?([^"']+)["']/gi, (match, pre, path) => `<img${pre}src="${assetBase}${path}"`);
+        text = text.replace(/<img([^+]+)src=["'](?!(?:http|https|ftp))(?:\.\/)?([^"']+)["']/gi, (match, pre, path) => `<img${pre}src="${assetBase}${path}"`);
         text = text.replace(/\[([^\]]*)\]\((?!(?:http|https|ftp|#))(?:\.\/)?([^)]+)\)/gi, `[$1](${assetBase}$2)`);
 
         readmeContent = await marked.parse(text, { gfm: true, breaks: true });
@@ -70,6 +72,7 @@
   }
 
   async function syncNow() {
+    if (!repo) return;
     try {
       await api.apiFetch(`/api/repositories/${repo.id}/sync`, { method: 'POST' });
       api.showToast('Sync initiated.', 'info');
@@ -77,7 +80,7 @@
   }
 
   $effect(() => {
-    if (repo.id) fetchReadme();
+    if (repo?.id) fetchReadme();
   });
 </script>
 
@@ -87,12 +90,12 @@
       <div style="display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
           <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
-            <h2 style="font-size: 2.5rem; margin: 0; letter-spacing: -0.04em;">{repo.name}</h2>
-            <div class="health-score" style="border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}">
-              {repo.health_score}%
+            <h2 style="font-size: 2.5rem; margin: 0; letter-spacing: -0.04em;">{repo?.name || 'Unknown'}</h2>
+            <div class="health-score" style="border-color: {(repo?.health_score || 0) > 70 ? 'var(--status-green)' : (repo?.health_score || 0) > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}">
+              {repo?.health_score || 0}%
             </div>
           </div>
-          <p style="color: var(--efinity-text-muted); font-size: 0.9rem; font-weight: 600; font-family: monospace;">{repo.url}</p>
+          <p style="color: var(--efinity-text-muted); font-size: 0.9rem; font-weight: 600; font-family: monospace;">{repo?.url || ''}</p>
         </div>
         <div style="display: flex; gap: 16px;">
           <button class="secondary" style="padding: 10px; border-radius: 12px; color: var(--status-green); border-color: rgba(0, 255, 136, 0.2);" onclick={syncNow} data-tooltip="Sync Now">
@@ -170,7 +173,7 @@
         </div>
       {:else if activeTab === 'logs'}
         <div style="display: flex; flex-direction: column; gap: 12px;">
-          {#each parseCommits(repo.last_commit || '') as commit}
+          {#each parseCommits(repo?.last_commit || '') as commit}
             <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
               <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
                 {#if commit.branch}<span class="branch-badge">{commit.branch}</span>{/if}
