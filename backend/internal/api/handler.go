@@ -211,10 +211,10 @@ func (h *Handler) AddRepository(c echo.Context) error {
 	}
 
 	id, _ := res.LastInsertId()
+	h.hub.BroadcastStatus(int(id), "syncing", "")
 	h.syncManager.Enqueue(int(id), repo.URL, repo.Name)
 
-	return c.JSON(http.StatusCreated, map[string]interface{}{"id": id})
-}
+	return c.JSON(http.StatusCreated, map[string]interface{}{"id": id})}
 
 func (h *Handler) UpdateRepository(c echo.Context) error {
 	id := c.Param("id")

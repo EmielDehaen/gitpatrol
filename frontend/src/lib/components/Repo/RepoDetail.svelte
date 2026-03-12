@@ -170,7 +170,7 @@
         </div>
       {:else if activeTab === 'logs'}
         <div style="display: flex; flex-direction: column; gap: 12px;">
-          {#each parseCommits(repo.last_commit) as commit}
+          {#each parseCommits(repo.last_commit || '') as commit}
             <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
               <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
                 {#if commit.branch}<span class="branch-badge">{commit.branch}</span>{/if}
