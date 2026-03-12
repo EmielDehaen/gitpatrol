@@ -64,3 +64,11 @@ This document outlines the development milestones for **GitPatrol**, an autonomo
     - **Logic:** Allow users to set global tokens (e.g., `GP_GITHUB_TOKEN`, `GP_GITLAB_TOKEN`) via `.env`.
     - **Feature:** Automatically inject these tokens into sync requests to avoid rate limits and allow cloning of private repositories (within the user's scope).
     - **Security:** Ensure tokens are only used for the intended provider and never logged.
+
+13. [ ] **Docker Hub Support**
+    - Provide an official Docker image on Docker Hub for rapid deployment.
+    - Simplified environment configuration for quick setup.
+
+14. [ ] **Proxmox LXC Install Script**
+    - Create a dedicated install script for Proxmox (LXC container).
+    - Aim for official inclusion in **Proxmox Helper Scripts** to allow easy homelab installation.
