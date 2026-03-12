@@ -91,13 +91,12 @@
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div>
             <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
-              <h2 style="font-size: 2.5rem; margin: 0; letter-spacing: -0.04em;">{repo.name}</h2>
-              <div class="health-score" style="border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}">
-                {repo.health_score}%
+              <h2 style="font-size: 2.5rem; margin: 0; letter-spacing: -0.04em;">{repo?.name || ''}</h2>
+              <div class="health-score" style="border-color: {(repo?.health_score || 0) > 70 ? 'var(--status-green)' : (repo?.health_score || 0) > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}">
+                {repo?.health_score || 0}%
               </div>
-            </div>
-            <p style="color: var(--efinity-text-muted); font-size: 0.9rem; font-weight: 600; font-family: monospace;">{repo.url}</p>
-          </div>
+              </div>
+              <p style="color: var(--efinity-text-muted); font-size: 0.9rem; font-weight: 600; font-family: monospace;">{repo?.url || ''}</p>          </div>
           <div style="display: flex; gap: 16px;">
             <button class="secondary" style="padding: 10px; border-radius: 12px; color: var(--status-green); border-color: rgba(0, 255, 136, 0.2);" onclick={syncNow} data-tooltip="Sync Now">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.3 0 6.1 2 7.3 4.9M22 12c0 4.4-3.6 8-8 8-3.3 0-6.1-2-7.3-4.9"/></svg>
@@ -174,7 +173,7 @@
           </div>
         {:else if activeTab === 'logs'}
           <div style="display: flex; flex-direction: column; gap: 12px;">
-            {#each parseCommits(repo.last_commit || '') as commit}
+            {#each parseCommits(repo?.last_commit || '') as commit}
               <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
                   {#if commit.branch}<span class="branch-badge">{commit.branch}</span>{/if}
