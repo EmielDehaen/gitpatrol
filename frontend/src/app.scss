@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+:root {
+  --efinity-blue: #0070f3;
+  --efinity-blue-glow: rgba(0, 112, 243, 0.4);
+  --efinity-dark: #050505;
+  --efinity-gray-dark: #0a0a0a;
+  --efinity-gray-light: #151515;
+  --efinity-border: rgba(255, 255, 255, 0.1);
+  --efinity-text-main: #ffffff;
+  --efinity-text-muted: #a0a0a0;
+  --status-green: #00ff88;
+  --status-red: #ff4d4d;
+  --status-yellow: #ffcc00;
+  --glass: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+@theme {
+  --color-efinity-blue: var(--efinity-blue);
+  --color-efinity-dark: var(--efinity-dark);
+  --color-efinity-gray-dark: var(--efinity-gray-dark);
+  --color-efinity-gray-light: var(--efinity-gray-light);
+  --color-status-green: var(--status-green);
+  --color-status-red: var(--status-red);
+  --color-status-yellow: var(--status-yellow);
+}
+
+/* Base resets & SASS Nesting */
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--efinity-dark);
+  color: var(--efinity-text-main);
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  line-height: 1.5;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+  &::-webkit-scrollbar-track {
+    background: var(--efinity-dark);
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--efinity-gray-light);
+    border-radius: 10px;
+    border: 2px solid var(--efinity-dark);
+    &:hover {
+      background: var(--efinity-blue);
+    }
+  }
+}
+
+/* Global Utility Components */
+.glass-panel {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.premium-button {
+  background: var(--efinity-blue);
+  color: #fff;
+  box-shadow: 0 4px 15px var(--efinity-blue-glow);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px var(--efinity-blue-glow);
+    filter: brightness(1.1);
+  }
+}
+
+/* Animations */
+@keyframes timer-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes timer-pulse {
+  0% { opacity: 0.8; stroke-width: 3; }
+  50% { opacity: 1; stroke-width: 4; }
+  100% { opacity: 0.8; stroke-width: 3; }
+}
+
+@keyframes bell-shake {
+  0%, 100% { transform: rotate(0); }
+  10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
+  20%, 40%, 60%, 80% { transform: rotate(10deg); }
+}
+
+/* Custom Tooltips */
+[data-tooltip] {
+  position: relative;
+  &::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 8px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+  }
+  &:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1);
+  }
+}
