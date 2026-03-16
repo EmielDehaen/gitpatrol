@@ -2,81 +2,75 @@ package main
 
 import (
 	"database/sql"
+	"log"
 	"os"
 	"time"
 
+	"gitpatrol/internal/api"
+	"gitpatrol/internal/auth"
+	"gitpatrol/internal/config"
+	"gitpatrol/internal/database"
+	"gitpatrol/internal/service"
+	"gitpatrol/internal/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
-	initEnv()
-	initDB()
+	cfg := config.LoadConfig("./db/gitpatrol.env")
+
+	db, err := database.NewDB(cfg.DBPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer db.Close()
 
-	initSyncManager(3)
-
 	os.MkdirAll("./data", 0755)
+
+	hub := websocket.NewHub()
+	repoService := service.NewRepoService(db, hub)
+	syncManager := service.NewSyncManager(cfg.WorkerCount, db, hub, repoService)
+	authService := auth.NewAuthService(cfg, db)
 
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	
+
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:3000"},
 		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 		AllowCredentials: true,
 	}))
 
-	// Public Auth Routes
-	e.GET("/api/auth/status", checkAuthStatus)
-	e.POST("/api/auth/register", register)
-	e.POST("/api/auth/login", login)
-	e.POST("/api/auth/logout", logout)
-	e.GET("/api/repositories/:id/badge", getHealthBadge)
+	h := api.NewHandler(db, authService, syncManager, repoService, hub)
+	h.RegisterRoutes(e)
 
-	// Protected API Group
-	api := e.Group("/api", AuthMiddleware)
-	api.GET("/me", getMe)
-	api.PATCH("/user", updateUser)
-	api.GET("/repositories", getRepositories)
-	api.POST("/repositories", addRepository)
-	api.PATCH("/repositories/:id", updateRepository)
-	api.DELETE("/repositories/:id", deleteRepository)
-	api.POST("/repositories/:id/sync", syncRepositoryNow)
-	api.GET("/repositories/:id/readme", getReadme)
-	api.GET("/repositories/:id/assets/*", getAsset)
-	api.GET("/incidents", getIncidents)
-	api.DELETE("/incidents", clearIncidents)
-
-	e.GET("/ws", handleWebSocket)
 	e.Static("/avatars", "./data/avatars")
 
 	// Scheduler
 	go func() {
 		for {
-			// Only pick repos that are NOT already syncing and have auto_patrol enabled
 			rows, _ := db.Query("SELECT id, name, url, interval_minutes, last_sync FROM repositories WHERE auto_patrol = 1 AND status != 'syncing'")
 			if rows != nil {
 				for rows.Next() {
 					var id int
 					var name, url string
 					var interval int
-					var lastSync sql.NullTime // Use NullTime for cleaner SQLite integration
-					
+					var lastSync sql.NullTime
+
 					if err := rows.Scan(&id, &name, &url, &interval, &lastSync); err != nil {
 						continue
 					}
-					
+
 					shouldSync := true
 					if lastSync.Valid {
 						if time.Since(lastSync.Time) < time.Duration(interval)*time.Minute {
 							shouldSync = false
 						}
 					}
-					
+
 					if shouldSync {
-						manager.Enqueue(id, url, name)
+						syncManager.Enqueue(id, url, name)
 					}
 				}
 				rows.Close()
