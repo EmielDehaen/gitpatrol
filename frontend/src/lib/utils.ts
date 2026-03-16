@@ -78,13 +78,13 @@ export function getProgress(repo: any) {
   return 100 * (remaining / total);
 }
 
-export function getRemainingTime(repo: any, withText: boolean = true) {
+export function getRemainingTime(repo: any, withText: boolean = true, now: number = Date.now()) {
   if (repo.auto_patrol === 0) return 'Manual Patrol Only';
   if (!repo.last_sync || repo.status === 'syncing') return 'Syncing...';
   
   const lastSync = new Date(repo.last_sync).getTime();
   const nextSync = lastSync + repo.interval_minutes * 60000;
-  const remainingMs = nextSync - Date.now();
+  const remainingMs = nextSync - now;
   
   if (remainingMs <= 0) return 'Syncing...';
   

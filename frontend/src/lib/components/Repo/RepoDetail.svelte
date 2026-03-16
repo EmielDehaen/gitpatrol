@@ -14,6 +14,14 @@
   let issues = $state<any[]>([]);
   let releases = $state<any[]>([]);
   let readmeExpanded = $state(false);
+  let now = $state(Date.now());
+
+  onMount(() => {
+    const interval = setInterval(() => {
+      now = Date.now();
+    }, 1000);
+    return () => clearInterval(interval);
+  });
 
   async function fetchMetadata() {
     if (!repo) return;
@@ -120,7 +128,7 @@
           </div>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; color: var(--efinity-text-muted); margin-top: 1rem; font-size: .8rem;">
-          <div style="display: flex; flex-direction: column; align-items: flex-start;">Syncing in <b style="color: var(--efinity-text-main); font-size: .9rem;">{getRemainingTime(repo, false)}</b></div>
+          <div style="display: flex; flex-direction: column; align-items: flex-start;">Syncing in <b style="color: var(--efinity-text-main); font-size: .9rem;">{getRemainingTime(repo, false, now)}</b></div>
           <div style="display: flex; flex-direction: column; align-items: flex-end;">Interval <b style="color: var(--efinity-text-main); font-size: .9rem;">{minutesToHuman(repo?.interval_minutes)}</b></div>
         </div>
       </div>
