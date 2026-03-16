@@ -41,18 +41,18 @@
   }
 </script>
 
-<div class="modal-overlay" onclick={() => show = false} transition:fade>
-  <div class="modal-content" style="max-width: 500px;" onclick={(e) => e.stopPropagation()}>
+<div class="modal-overlay" onclick={() => show = false} onkeydown={(e) => e.key == 'ESCAPE' && (show = false)} role='presentation' transition:fade>
+  <div class="modal-content" style="max-width: 500px;" onclick={(e) => e.stopPropagation()} role='none'>
     <div class="modal-header">
       <h2 style="font-size: 1.5rem; margin: 0;">Configure Patrol: {repo.name}</h2>
     </div>
     <div class="modal-body">
-      <label>SCAN INTERVAL</label>
-      <input type="text" bind:value={intervalString} placeholder="e.g. 1h, 30m, 1d" />
+      <label for='interval'>SCAN INTERVAL</label>
+      <input id='interval' type="text" bind:value={intervalString} placeholder="e.g. 1h, 30m, 1d" />
       
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 40px;">
-        <input type="checkbox" bind:checked={repo.auto_patrol} style="width: 20px; height: 20px; margin: 0; cursor: pointer;" />
-        <label style="margin: 0; cursor: pointer;">ACTIVE AUTO PATROL</label>
+        <input id='auto_patrol' type="checkbox" bind:checked={repo.auto_patrol} style="width: 20px; height: 20px; margin: 0; cursor: pointer;" />
+        <label for='auto_patrol' style="margin: 0; cursor: pointer;">ACTIVE AUTO PATROL</label>
       </div>
 
       <div style="display: flex; gap: 16px; margin-bottom: 32px;">

@@ -4,7 +4,7 @@
   import { type Repository, type Commit } from '$lib/types';
   import { API_URL, api } from '$lib/api.svelte';
   import { fade } from 'svelte/transition';
-    import { getAvatarUrl, handleAvatarError } from '$lib/utils';
+  import { getAvatarUrl, getRemainingTime, handleAvatarError, minutesToHuman } from '$lib/utils';
 
   let { repo = $bindable(), selectedRepo = $bindable(), showConfigModal = $bindable() } = $props<{ repo: Repository | null, selectedRepo: Repository | null, showConfigModal: boolean }>();
 
@@ -91,19 +91,19 @@
       <div class="modal-header">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div style="display: flex; align-items: center; gap: 2rem;">
-            <img src={getAvatarUrl(repo.url)} onerror={handleAvatarError} alt={repo.name} style="width: 64px; height: 64px; border-radius: 16px; border: 1px solid var(--glass-border);" />
+            <img src={getAvatarUrl(repo?.url)} onerror={handleAvatarError} alt={repo?.name} style="width: 64px; height: 64px; border-radius: 16px; border: 1px solid var(--glass-border);" />
             <div>
               <div style="display: flex; align-items: center; gap: 16px;">
                 <h2 style="font-size: 2.5rem; margin: 0; letter-spacing: -0.04em;">{repo?.name || ''}</h2>
                 <!-- <div class="health-score" style="border-color: {(repo?.health_score || 0) > 70 ? 'var(--status-green)' : (repo?.health_score || 0) > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}">
                   {repo?.health_score || 0}%
                 </div> -->
-                <div class="badge" style="color: {repo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; background: rgba(255,255,255,0.03); font-size: 0.8rem; padding: 4px 12px; border: 1px solid rgba(255,255,255,0.05);">
-                  {repo.health_score || 0}% HEALTH
+                <div class="badge" style="color: {repo?.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; background: rgba(255,255,255,0.03); font-size: 0.8rem; padding: 4px 12px; border: 1px solid rgba(255,255,255,0.05);">
+                  {repo?.health_score || 0}% HEALTH
                 </div>
               </div>
-              {#if repo.url}
-                <a href={repo.url} target="_blank" rel="noopener noreferrer" style="color: var(--efinity-blue); text-decoration: none; font-family: monospace; font-size: 0.95rem; display: block;">{repo.url} ↗</a>
+              {#if repo?.url}
+                <a href={repo?.url} target="_blank" rel="noopener noreferrer" style="color: var(--efinity-blue); text-decoration: none; font-family: monospace; font-size: 0.95rem; display: block;">{repo?.url} ↗</a>
               {/if}
             </div>
           </div>
@@ -118,6 +118,10 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; color: var(--efinity-text-muted); margin-top: 1rem; font-size: .8rem;">
+          <div style="display: flex; flex-direction: column; align-items: flex-start;">Syncing in <b style="color: var(--efinity-text-main); font-size: .9rem;">{getRemainingTime(repo, false)}</b></div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end;">Interval <b style="color: var(--efinity-text-main); font-size: .9rem;">{minutesToHuman(repo?.interval_minutes)}</b></div>
         </div>
       </div>
 

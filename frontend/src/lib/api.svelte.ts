@@ -59,7 +59,7 @@ class GitPatrolAPI {
     }
   }
 
-  async handleAuth(username, password) {
+  async handleAuth(username: string, password: string) {
     const endpoint = this.needsBootstrap ? '/api/auth/register' : '/api/auth/login';
     const res = await fetch(`${API_URL}${endpoint}`, {
       method: 'POST',

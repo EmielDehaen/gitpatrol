@@ -252,7 +252,7 @@ h1 {
 }
 
 .stats-row { display: flex; gap: 20px; margin-top: 24px; }
-.stat-item { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--efinity-text-muted); }
+.stat-item { display: flex; align-items: flex-end; gap: 0; font-size: 0.85rem; color: var(--efinity-text-muted); flex-direction: column;}
 .stat-item b { color: #fff; }
 
 .mini-chart { margin-top: 24px; height: 35px; display: flex; align-items: flex-end; gap: 4px; }
@@ -262,7 +262,7 @@ h1 {
   display: flex; justify-content: space-between; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--efinity-border);
 }
 
-.info-item label {
+.info-item .label {
   display: block; font-size: 0.6rem; color: var(--efinity-text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.1em; margin-bottom: 6px;
 }
 

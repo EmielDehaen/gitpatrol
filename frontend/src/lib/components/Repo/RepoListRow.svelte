@@ -1,12 +1,11 @@
 <script lang="ts">
   import { type Repository } from '$lib/types';
-  import { getAvatarUrl, getRemainingTime, getProgress, isSyncing, handleAvatarError } from '$lib/utils';
-  import { API_URL } from '$lib/api.svelte';
+  import { getAvatarUrl, getRemainingTime, isSyncing, handleAvatarError, humanToMinutes, minutesToHuman } from '$lib/utils';
 
   let { repo, selectedRepo = $bindable() } = $props<{ repo: Repository, selectedRepo: Repository | null }>();
 </script>
 
-<div class="list-item" onclick={() => selectedRepo = repo}>
+<div class="list-item" onclick={() => selectedRepo = repo} onkeydown={() => {}} role='button' tabindex=-1>
   <div style="display: flex; align-items: center; gap: 24px;">
     <div class="radial-timer" class:is-syncing={isSyncing(repo)} data-tooltip={getRemainingTime(repo)} style="width: 32px; height: 32px;">
       <svg width="32" height="32">
@@ -40,12 +39,12 @@
 
   <div style="display: flex; gap: 40px; align-items: center;">
     <div class="stat-item">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--status-yellow)">
-        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-      </svg>
-      <b>{repo.stars}</b>
+      <span>Health</span>
+      <b>{repo.health_score}%</b>
     </div>
-    <div class="stat-item"><b>{repo.health_score}</b> Health</div>
-    <div class="badge" style="color: {repo.status === 'synced' ? 'var(--status-green)' : '#fff'}">{repo.status.toUpperCase()}</div>
+    <div class="stat-item">
+      <span>Interval</span>
+      <b>{minutesToHuman(repo.interval_minutes)}</b>
+    </div>
   </div>
 </div>

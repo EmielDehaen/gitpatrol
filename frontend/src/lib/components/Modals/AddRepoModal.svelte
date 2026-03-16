@@ -46,15 +46,15 @@
   }
 </script>
 
-<div class="modal-overlay" onclick={() => show = false} transition:fade>
-  <div class="modal-content" style="max-width: 540px;" onclick={(e) => e.stopPropagation()}>
+<div class="modal-overlay" onclick={() => show = false} onkeydown={(e) => e.key === 'Escape' && (show = false)} role="presentation" transition:fade>
+  <div class="modal-content" style="max-width: 540px;" onclick={(e) => e.stopPropagation()} role='none'>
     <div class="modal-header">
       <h2 style="margin: 0; font-size: 1.8rem; font-weight: 800;">Deploy New Patrol</h2>
       <p style="color: var(--efinity-text-muted); margin: 8px 0 0 0; font-size: 0.9rem;">Configure a new asset for monitoring.</p>
     </div>
     <div class="modal-body">
-      <label>REPOSITORY URL</label>
-      <input type="text" bind:value={url} placeholder="https://github.com/hoppscotch/hoppscotch" style="margin-bottom: 8px;" />
+      <label for="url">REPOSITORY URL</label>
+      <input id="url" type="text" bind:value={url} placeholder="https://github.com/hoppscotch/hoppscotch" style="margin-bottom: 8px;" />
       
       {#if getNormalizedUrl(url)}
         <div style="margin-bottom: 24px;">
@@ -67,10 +67,10 @@
 
       {#if url.length > 3}
         <div transition:fade style="display: flex; gap: 20px; align-items: center; margin-bottom: 32px; background: rgba(255,255,255,0.02); padding: 16px; border-radius: 16px; border: 1px solid var(--glass-border);">
-          <img src={getAvatarUrl(url, API_URL)} onerror={handleAvatarError} alt="" style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--glass-border);" />
+          <img src={getAvatarUrl(url)} onerror={handleAvatarError} alt="" style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--glass-border);" />
           <div style="flex: 1;">
-            <label style="margin-bottom: 4px;">DISPLAY NAME</label>
-            <input bind:value={name} placeholder="e.g. Hoppscotch" style="margin-bottom: 0;" />
+            <label for="name" style="margin-bottom: 4px;">DISPLAY NAME</label>
+            <input id="name" bind:value={name} placeholder="e.g. Hoppscotch" style="margin-bottom: 0;" />
           </div>
         </div>
       {/if}
@@ -84,8 +84,8 @@
       </div>
 
       {#if autoPatrol}
-        <label>SYNC INTERVAL (e.g. 1h 30m, 1d 2h)</label>
-        <input type="text" bind:value={intervalString} placeholder="1h" />
+        <label for="interval">SYNC INTERVAL (e.g. 1h 30m, 1d 2h)</label>
+        <input id="interval" type="text" bind:value={intervalString} placeholder="1d" />
       {/if}
 
       <div style="display: flex; gap: 16px; margin-top: 32px;">

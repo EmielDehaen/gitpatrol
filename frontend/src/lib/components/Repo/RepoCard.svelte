@@ -1,12 +1,11 @@
 <script lang="ts">
   import { type Repository } from '$lib/types';
   import { getAvatarUrl, getRemainingTime, getProgress, isSyncing, minutesToHuman, handleAvatarError } from '$lib/utils';
-  import { API_URL, api } from '$lib/api.svelte';
 
   let { repo, selectedRepo = $bindable() } = $props<{ repo: Repository, selectedRepo: Repository | null }>();
 </script>
 
-<div class="card" onclick={() => selectedRepo = repo}>
+<div class="card" onclick={() => selectedRepo = repo} onkeydown={() => {}} role='button' tabindex=-1>
   <div style="position: absolute; top: 32px; right: 32px; display: flex; align-items: center; gap: 16px;">
     <div 
       class="radial-timer" 
@@ -61,8 +60,16 @@
   </div>
 
   <div class="stats-row">
-    <div class="stat-item" data-tooltip="GitHub Stars"><svg width="14" height="14" viewBox="0 0 24 24" fill="var(--status-yellow)" style="opacity: 0.8;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><b>{repo.stars}</b></div>
-    <div class="stat-item" data-tooltip="Open Issues"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><b>{repo.open_issues}</b></div>
+    <div class="stat-item" data-tooltip="GitHub Stars">
+      <div style="display: flex; gap: .25rem; align-items: center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--status-yellow)" style="opacity: 0.8;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><b>{repo.stars}</b>
+      </div>
+    </div>
+    <div class="stat-item" data-tooltip="Open Issues">
+      <div style="display: flex; gap: .25rem; align-items: center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><b>{repo.open_issues}</b>
+      </div>
+    </div>
   </div>
 
   <div class="mini-chart">
@@ -73,11 +80,11 @@
 
   <div class="info-row">
     <div class="info-item">
-      <label>Last Patrol</label>
+      <span class="label">Last Patrol</span>
       <span>{repo.last_sync ? new Date(repo.last_sync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'NEVER'}</span>
     </div>
     <div class="info-item" style="text-align: right;">
-      <label>Interval</label>
+      <span class="label">Interval</span>
       <span>{minutesToHuman(repo.interval_minutes)}</span>
     </div>
   </div>

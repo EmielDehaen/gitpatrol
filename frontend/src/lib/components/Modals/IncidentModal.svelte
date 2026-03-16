@@ -10,8 +10,8 @@
   }
 </script>
 
-<div class="modal-overlay" onclick={() => show = false} transition:fade>
-  <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+<div class="modal-overlay" onclick={() => show = false} onkeydown={(e) => e.key == 'ESCAPE' && (show = false)} role='presentation' transition:fade>
+  <div class="modal-content" onclick={(e) => e.stopPropagation()} role='none'>
     <div class="modal-header">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2 style="font-size: 1.5rem; margin: 0;">Tactical Incident Logs</h2>

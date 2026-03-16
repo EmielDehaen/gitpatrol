@@ -26,11 +26,11 @@
       </p>
     </div>
     
-    <label>USERNAME</label>
-    <input type="text" bind:value={username} placeholder="e.g. emiel" />
+    <label for='username'>USERNAME</label>
+    <input id='username' type="text" bind:value={username} placeholder="username" />
     
-    <label>PASSWORD</label>
-    <input type="password" bind:value={password} placeholder="••••••••" onkeydown={(e) => e.key === 'Enter' && handleSubmit()} />
+    <label for='password'>PASSWORD</label>
+    <input id='password' type="password" bind:value={password} placeholder="" onkeydown={(e) => e.key === 'Enter' && handleSubmit()} />
     
     <button style="width: 100%; margin-top: 32px;" onclick={handleSubmit} disabled={loading}>
       {loading ? 'PROCESSING...' : api.needsBootstrap ? 'BOOTSTRAP SYSTEM' : 'ACCESS DASHBOARD'}

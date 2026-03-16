@@ -78,7 +78,7 @@ export function getProgress(repo: any) {
   return 100 * (remaining / total);
 }
 
-export function getRemainingTime(repo: any) {
+export function getRemainingTime(repo: any, withText: boolean = true) {
   if (repo.auto_patrol === 0) return 'Manual Patrol Only';
   if (!repo.last_sync || repo.status === 'syncing') return 'Syncing...';
   
@@ -99,5 +99,9 @@ export function getRemainingTime(repo: any) {
   if (m > 0) parts.push(`${m}m`);
   if (s > 0 || parts.length === 0) parts.push(`${s}s`);
   
-  return `Next sync in: ${parts.join(' ')}`;
+  if (withText) {
+    return `Next sync in: ${parts.join(' ')}`;
+  } else {
+    return parts.join(' ');
+  }
 }

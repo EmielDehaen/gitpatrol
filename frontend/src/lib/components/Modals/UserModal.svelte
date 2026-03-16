@@ -35,20 +35,20 @@
   }
 </script>
 
-<div class="modal-overlay" onclick={() => show = false} transition:fade>
-  <div class="modal-content" style="max-width: 500px;" onclick={(e) => e.stopPropagation()}>
+<div class="modal-overlay" onclick={() => show = false} onkeydown={(e) => e.key == 'ESCAPE' && (show = false)} role='presentation' transition:fade>
+  <div class="modal-content" style="max-width: 500px;" onclick={(e) => e.stopPropagation()} role='none'>
     <div class="modal-header">
       <h2 style="font-size: 1.5rem; margin: 0;">User Configuration</h2>
     </div>
     <div class="modal-body">
-      <label>ADMIN USERNAME</label>
-      <input type="text" bind:value={editUsername} placeholder="e.g. emiel" />
+      <label for='editUsername'>ADMIN USERNAME</label>
+      <input id='editUsername' type="text" bind:value={editUsername} placeholder="e.g. emiel" />
       
       <div style="border-top: 1px solid var(--glass-border); margin: 32px 0; padding-top: 32px;">
-        <label style="color: var(--status-yellow);">CHANGE ACCESS CODE (OPTIONAL)</label>
-        <input type="password" bind:value={oldPassword} placeholder="CURRENT PASSWORD" />
-        <input type="password" bind:value={newPassword} placeholder="NEW PASSWORD" />
-        <input type="password" bind:value={confirmPassword} placeholder="CONFIRM NEW PASSWORD" />
+        <label for='oldpPassword' style="color: var(--status-yellow);">CHANGE ACCESS CODE (OPTIONAL)</label>
+        <input id='oldPassword' type="password" bind:value={oldPassword} placeholder="CURRENT PASSWORD" />
+        <input id='newPassword' type="password" bind:value={newPassword} placeholder="NEW PASSWORD" />
+        <input id='confirmPassword' type="password" bind:value={confirmPassword} placeholder="CONFIRM NEW PASSWORD" />
       </div>
 
       <div style="display: flex; gap: 16px;">
