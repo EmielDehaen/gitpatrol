@@ -1,3 +1,5 @@
+import { API_URL } from '$lib/api.svelte';
+
 export function getNormalizedUrl(url: string) {
   if (!url || url.length < 3) return '';
   let u = url.trim().replace(/\.git$/, '');
@@ -47,15 +49,15 @@ export function humanToMinutes(str: string): number {
   return total > 0 ? total : 60;
 }
 
-export function getAvatarUrl(url: string, apiUrl: string) {
+export function getAvatarUrl(url: string) {
   const parts = url.replace('https://github.com/', '').split('/');
-  if (parts.length > 0) return `${apiUrl}/avatars/${parts[0]}.png`;
+  if (parts.length > 0) return `${API_URL}/avatars/${parts[0]}.png`;
   return '';
 }
 
 export function handleAvatarError(e: Event) {
   const img = e.target as HTMLImageElement;
-  img.src = "./lib/assets/GitHub-Mark.png";
+  img.src = "/GitHub-Mark.png";
 }
 
 export function isSyncing(repo: any) {

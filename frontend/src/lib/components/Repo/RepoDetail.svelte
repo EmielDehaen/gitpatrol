@@ -91,7 +91,7 @@
       <div class="modal-header">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div style="display: flex; align-items: center; gap: 2rem;">
-            <img src={getAvatarUrl(repo.url, API_URL)} onerror={handleAvatarError} alt={repo.name} style="width: 64px; height: 64px; border-radius: 16px; border: 1px solid var(--glass-border);" />
+            <img src={getAvatarUrl(repo.url)} onerror={handleAvatarError} alt={repo.name} style="width: 64px; height: 64px; border-radius: 16px; border: 1px solid var(--glass-border);" />
             <div>
               <div style="display: flex; align-items: center; gap: 16px;">
                 <h2 style="font-size: 2.5rem; margin: 0; letter-spacing: -0.04em;">{repo?.name || ''}</h2>

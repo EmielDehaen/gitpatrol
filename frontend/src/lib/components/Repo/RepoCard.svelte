@@ -1,14 +1,9 @@
 <script lang="ts">
   import { type Repository } from '$lib/types';
-  import { getAvatarUrl, getRemainingTime, getProgress, isSyncing, minutesToHuman } from '$lib/utils';
+  import { getAvatarUrl, getRemainingTime, getProgress, isSyncing, minutesToHuman, handleAvatarError } from '$lib/utils';
   import { API_URL, api } from '$lib/api.svelte';
 
   let { repo, selectedRepo = $bindable() } = $props<{ repo: Repository, selectedRepo: Repository | null }>();
-
-  function handleAvatarError(e: Event) {
-    const img = e.target as HTMLImageElement;
-    img.src = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
-  }
 </script>
 
 <div class="card" onclick={() => selectedRepo = repo}>
@@ -36,7 +31,7 @@
 
   <div style="display: flex; align-items: center; gap: 24px;">
     <img 
-      src={getAvatarUrl(repo.url, API_URL)} 
+      src={getAvatarUrl(repo.url)} 
       alt="" 
       style="width: 44px; height: 44px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-border);"
       onerror={handleAvatarError}
