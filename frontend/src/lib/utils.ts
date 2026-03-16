@@ -53,6 +53,11 @@ export function getAvatarUrl(url: string, apiUrl: string) {
   return '';
 }
 
+export function handleAvatarError(e: Event) {
+  const img = e.target as HTMLImageElement;
+  img.src = "./lib/assets/GitHub-Mark.png";
+}
+
 export function isSyncing(repo: any) {
   if (repo.status === 'syncing') return true;
   if (repo.auto_patrol === 0 || !repo.last_sync) return false;
