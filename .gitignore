@@ -40,3 +40,6 @@ pnpm-debug.log*
 # Bun
 bun.lockb
 node_modules/
+
+.devcontainer
+CLAUDE.md

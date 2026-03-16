@@ -42,7 +42,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	h := api.NewHandler(db, authService, syncManager, repoService, hub)
+	h := api.NewHandler(db, authService, syncManager, repoService, hub, cfg)
 	h.RegisterRoutes(e)
 
 	e.Static("/avatars", "./data/avatars")
