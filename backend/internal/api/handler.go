@@ -21,24 +21,26 @@ import (
 )
 
 type Handler struct {
-	db            *database.DB
-	authService   *auth.AuthService
-	syncManager   *service.SyncManager
-	repoService   *service.RepoService
+	db              *database.DB
+	authService     *auth.AuthService
+	syncManager     *service.SyncManager
+	repoService     *service.RepoService
 	healthService *service.HealthService
-	hub           *websocket.Hub
-	config        *config.Config
+	exportService *service.ExportService
+	hub             *websocket.Hub
+	config          *config.Config
 }
 
-func NewHandler(db *database.DB, authService *auth.AuthService, syncManager *service.SyncManager, repoService *service.RepoService, healthService *service.HealthService, hub *websocket.Hub, cfg *config.Config) *Handler {
+func NewHandler(db *database.DB, authService *auth.AuthService, syncManager *service.SyncManager, repoService *service.RepoService, healthService *service.HealthService, exportService *service.ExportService, hub *websocket.Hub, cfg *config.Config) *Handler {
 	return &Handler{
-		db:            db,
-		authService:   authService,
-		syncManager:   syncManager,
-		repoService:   repoService,
-		healthService: healthService,
-		hub:           hub,
-		config:        cfg,
+		db:              db,
+		authService:     authService,
+		syncManager:     syncManager,
+		repoService:     repoService,
+		healthService:   healthService,
+		exportService:   exportService,
+		hub:             hub,
+		config:          cfg,
 	}
 }
 
@@ -59,6 +61,7 @@ func (h *Handler) RegisterRoutes(e *echo.Echo) {
 	api.PATCH("/repositories/:id", h.UpdateRepository)
 	api.DELETE("/repositories/:id", h.DeleteRepository)
 	api.POST("/repositories/:id/sync", h.SyncRepositoryNow)
+	api.POST("/repositories/:id/export", h.ExportRepository)
 	api.GET("/repositories/:id/readme", h.GetReadme)
 	api.GET("/repositories/:id/assets/*", h.GetAsset)
 	api.GET("/incidents", h.GetIncidents)
@@ -372,4 +375,22 @@ func (h *Handler) GetHealthBadge(c echo.Context) error {
 	c.Response().Header().Set(echo.HeaderContentType, "image/svg+xml")
 	io.Copy(c.Response().Writer, resp.Body)
 	return nil
+}
+
+func (h *Handler) ExportRepository(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
+	
+	var body struct {
+		Destination string `json:"destination"`
+	}
+	if err := c.Bind(&body); err != nil {
+		return err
+	}
+
+	res, err := h.exportService.Export(id, body.Destination)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, res)
 }

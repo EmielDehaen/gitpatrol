@@ -15,8 +15,15 @@
   let releases = $state<any[]>([]);
   let readmeExpanded = $state(false);
   let now = $state(Date.now());
+  let exportDestination = $state('');
+
+  async function fetchSettings() {
+    const settings = await api.settings.getSettings();
+    exportDestination = settings.export_destination;
+  }
 
   onMount(() => {
+    fetchSettings();
     const interval = setInterval(() => {
       now = Date.now();
     }, 1000);
@@ -89,6 +96,35 @@
     } catch (e) {}
   }
 
+  async function exportRepo() {
+    if (!repo) return;
+    if (!exportDestination) {
+      toastHandler.showToast('No recovery vault configured. Setup tokens in User Configuration first.', 'error');
+      return;
+    }
+
+    try {
+      toastHandler.showToast(`Initiating recovery to ${exportDestination.toUpperCase()}...`, 'info');
+      const res = await apiFetch(`/api/repositories/${repo.id}/export`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destination: exportDestination })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toastHandler.showToast('Repository recovered successfully!', 'success');
+        if (data.destination_url) {
+          window.open(data.destination_url, '_blank');
+        }
+      } else {
+        const data = await res.json();
+        toastHandler.showToast(data.error || 'Recovery failed.', 'error');
+      }
+    } catch (e) {
+      toastHandler.showToast('Network error during recovery.', 'error');
+    }
+  }
+
   $effect(() => {
     if (repo?.id) fetchReadme();
   });
@@ -104,9 +140,6 @@
             <div>
               <div style="display: flex; align-items: center; gap: 16px;">
                 <h2 style="font-size: 2.5rem; margin: 0; letter-spacing: -0.04em;">{repo?.name || ''}</h2>
-                <!-- <div class="health-score" style="border-color: {(repo?.health_score || 0) > 70 ? 'var(--status-green)' : (repo?.health_score || 0) > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}">
-                  {repo?.health_score || 0}%
-                </div> -->
                 <div class="badge" style="color: {repo?.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; background: rgba(255,255,255,0.03); font-size: 0.8rem; padding: 4px 12px; border: 1px solid rgba(255,255,255,0.05);">
                   {repo?.health_score || 0}% HEALTH
                 </div>
@@ -117,6 +150,9 @@
             </div>
           </div>
           <div style="display: flex; gap: 16px;">
+            <button class="secondary" style="padding: 10px; border-radius: 12px; color: var(--efinity-blue); border-color: rgba(0, 153, 255, 0.2);" onclick={exportRepo} data-tooltip="Recovery Bridge (One-Click Export)" aria-label='Export Repository'>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+            </button>
             <button class="secondary" style="padding: 10px; border-radius: 12px; color: var(--status-green); border-color: rgba(0, 255, 136, 0.2);" onclick={syncNow} data-tooltip="Sync Now" aria-label='Sync now'>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.3 0 6.1 2 7.3 4.9M22 12c0 4.4-3.6 8-8 8-3.3 0-6.1-2-7.3-4.9"/></svg>
             </button>

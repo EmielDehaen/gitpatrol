@@ -36,6 +36,7 @@ func main() {
 	syncManager := service.NewSyncManager(cfg.WorkerCount, db, hub, repoService)
 	authService := auth.NewAuthService(cfg, db)
 	healthService := service.NewHealthService(db, hub, syncManager)
+	exportService := service.NewExportService(db, cfg)
 
 	healthService.Start()
 
@@ -49,7 +50,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	h := api.NewHandler(db, authService, syncManager, repoService, healthService, hub, cfg)
+	h := api.NewHandler(db, authService, syncManager, repoService, healthService, exportService, hub, cfg)
 	h.RegisterRoutes(e)
 
 	e.Static("/avatars", "./data/avatars")
