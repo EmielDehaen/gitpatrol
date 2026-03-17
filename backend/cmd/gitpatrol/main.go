@@ -28,7 +28,7 @@ func main() {
 	os.MkdirAll("./data", 0755)
 
 	hub := websocket.NewHub()
-	repoService := service.NewRepoService(db, hub)
+	repoService := service.NewRepoService(db, hub, cfg)
 	syncManager := service.NewSyncManager(cfg.WorkerCount, db, hub, repoService)
 	authService := auth.NewAuthService(cfg, db)
 
