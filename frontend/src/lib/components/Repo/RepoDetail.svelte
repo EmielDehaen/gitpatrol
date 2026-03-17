@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { marked } from 'marked';
   import { type Repository, type Commit } from '$lib/types';
-  import { API_URL, api } from '$lib/api.svelte';
+  import { API_URL, api, apiFetch, toastHandler } from '$lib/api.svelte';
   import { fade } from 'svelte/transition';
   import { getAvatarUrl, getRemainingTime, handleAvatarError, minutesToHuman } from '$lib/utils';
 
@@ -27,13 +27,13 @@
     if (!repo) return;
     const assetBase = `/api/repositories/${repo.id}/assets/`;
     try {
-      const issuesRes = await api.apiFetch(`${assetBase}metadata/issues.json`);
+      const issuesRes = await apiFetch(`${assetBase}metadata/issues.json`);
       issues = issuesRes.ok ? await issuesRes.json() : [];
 
-      const releasesRes = await api.apiFetch(`${assetBase}metadata/releases.json`);
+      const releasesRes = await apiFetch(`${assetBase}metadata/releases.json`);
       releases = releasesRes.ok ? await releasesRes.json() : [];
 
-      const wikiRes = await api.apiFetch(`${assetBase}wiki/Home.md`);
+      const wikiRes = await apiFetch(`${assetBase}wiki/Home.md`);
       if (wikiRes.ok) {
         wikiContent = await marked.parse(await wikiRes.text());
       } else {
@@ -47,7 +47,7 @@
     readmeContent = 'Loading mission briefing...';
     readmeExpanded = false;
     try {
-      const res = await api.apiFetch(`/api/repositories/${repo.id}/readme`);
+      const res = await apiFetch(`/api/repositories/${repo.id}/readme`);
       if (res.ok) {
         let text = await res.text();
         const assetBase = `${API_URL}/api/repositories/${repo.id}/assets/`;
@@ -84,8 +84,8 @@
   async function syncNow() {
     if (!repo) return;
     try {
-      await api.apiFetch(`/api/repositories/${repo.id}/sync`, { method: 'POST' });
-      api.showToast('Sync initiated.', 'info');
+      await apiFetch(`/api/repositories/${repo.id}/sync`, { method: 'POST' });
+      toastHandler.showToast('Sync initiated.', 'info');
     } catch (e) {}
   }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api } from '$lib/api.svelte';
+  import { api, apiFetch, toastHandler } from '$lib/api.svelte';
   import { humanToMinutes, minutesToHuman } from '$lib/utils';
   import { type Repository } from '$lib/types';
   import { fade } from 'svelte/transition';
@@ -10,7 +10,7 @@
 
   async function updateConfig() {
     try {
-      const res = await api.apiFetch(`/api/repositories/${repo.id}`, {
+      const res = await apiFetch(`/api/repositories/${repo.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -22,9 +22,9 @@
         await api.fetchRepos();
         selectedRepo = api.repositories.find(r => r.id === repo.id) || null;
         show = false; 
-        api.showToast('Configuration updated.', 'success');
+        toastHandler.showToast('Configuration updated.', 'success');
       } else {
-        api.showToast('Failed to update configuration.', 'error');
+        toastHandler.showToast('Failed to update configuration.', 'error');
       }
     } catch (e) {}
   }
@@ -32,10 +32,10 @@
   async function deleteRepo() {
     if (!confirm('Are you sure you want to terminate this patrol?')) return;
     try {
-      const res = await api.apiFetch(`/api/repositories/${repo.id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/repositories/${repo.id}`, { method: 'DELETE' });
       if (res.ok) { 
         selectedRepo = null; show = false; api.fetchRepos(); 
-        api.showToast('Patrol terminated.', 'info');
+        toastHandler.showToast('Patrol terminated.', 'info');
       }
     } catch (e) {}
   }

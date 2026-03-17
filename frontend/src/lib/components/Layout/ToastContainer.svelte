@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { api } from '$lib/api.svelte';
+  import { toastHandler } from '$lib/api.svelte';
   import { fade, fly } from 'svelte/transition';
 </script>
 
 <div class="toast-container">
-  {#each api.toasts as toast (toast.id)}
+  {#each toastHandler.toasts as toast (toast.id)}
     <div 
       class="toast {toast.type}" 
       in:fly={{ y: 20, duration: 400 }} 
