@@ -60,8 +60,8 @@ This document outlines the development milestones for **GitPatrol**, an autonomo
     - **Logic:** Add a "Deploy to..." button in the repository detail view.
     - **UX:** One-click transfer of archived code and metadata to a fresh instance for recovery or migration.
 
-12. [ ] **Provider Token Support via Environment Variables**
-    - **Logic:** Allow users to set global tokens (e.g., `GP_GITHUB_TOKEN`, `GP_GITLAB_TOKEN`) via `.env`.
+12. [x] **Provider Token Support via Environment Variables**
+    - **Logic:** Allow users to set global tokens (e.g., `GITHUB_TOKEN`, `GITLAB_TOKEN`) via `.env`.
     - **Feature:** Automatically inject these tokens into sync requests to avoid rate limits and allow cloning of private repositories (within the user's scope).
     - **Security:** Ensure tokens are only used for the intended provider and never logged.
 
