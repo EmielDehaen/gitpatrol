@@ -1,20 +1,25 @@
+import { SettingsAPI } from './settings/settingsApi';
 import { type Repository, type Incident, type User, type Toast } from './types';
 
 export const API_URL = 'http://localhost:8080';
 
-class GitPatrolAPI {
-  isAuthenticated = $state(false);
-  needsBootstrap = $state(false);
-  user = $state<User | null>(null);
-  repositories = $state<Repository[]>([]);
-  incidents = $state<Incident[]>([]);
-  authLoading = $state(true);
-  toasts = $state<Toast[]>([]);
-  private toastId = 0;
-
-  constructor() {
-    this.checkAuth();
+export async function apiFetch(endpoint: string, options: RequestInit = {}) {
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (res.status === 401 && api.isAuthenticated) {
+    api.handleLogout();
+    toastHandler.showToast('Session expired. Please login again.', 'error');
+    throw new Error('Unauthorized');
   }
+  return res;
+}
+
+class ToastHandler {
+  toasts = $state<Toast[]>([]);
+  private toastId = 0
 
   showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
     const id = this.toastId++;
@@ -23,18 +28,19 @@ class GitPatrolAPI {
       this.toasts = this.toasts.filter(t => t.id !== id);
     }, 5000);
   }
+}
 
-  async apiFetch(endpoint: string, options: RequestInit = {}) {
-    const res = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      credentials: 'include'
-    });
-    if (res.status === 401 && this.isAuthenticated) {
-      this.handleLogout();
-      this.showToast('Session expired. Please login again.', 'error');
-      throw new Error('Unauthorized');
-    }
-    return res;
+class GitPatrolAPI {
+  isAuthenticated = $state(false);
+  needsBootstrap = $state(false);
+  user = $state<User | null>(null);
+  repositories = $state<Repository[]>([]);
+  incidents = $state<Incident[]>([]);
+  authLoading = $state(true);
+  settings = new SettingsAPI();
+
+  constructor() {
+    this.checkAuth();
   }
 
   async checkAuth() {
@@ -43,9 +49,9 @@ class GitPatrolAPI {
       const data = await res.json();
       this.needsBootstrap = data.needs_bootstrap || false;
       this.isAuthenticated = data.authenticated || false;
-      
+
       if (this.isAuthenticated) {
-        const meRes = await this.apiFetch('/api/me');
+        const meRes = await apiFetch('/api/me');
         if (meRes.ok) {
           this.user = await meRes.json();
         }
@@ -67,14 +73,14 @@ class GitPatrolAPI {
       body: JSON.stringify({ username, password }),
       credentials: 'include'
     });
-    
+
     if (res.ok) {
-      this.showToast(this.needsBootstrap ? 'System bootstrapped!' : 'Welcome back.', 'success');
+      toastHandler.showToast(this.needsBootstrap ? 'System bootstrapped!' : 'Welcome back.', 'success');
       await this.checkAuth();
       return true;
     } else {
       const data = await res.json();
-      this.showToast(data.error || 'Authentication failed.', 'error');
+      toastHandler.showToast(data.error || 'Authentication failed.', 'error');
       return false;
     }
   }
@@ -84,36 +90,37 @@ class GitPatrolAPI {
     this.isAuthenticated = false;
     this.user = null;
     this.repositories = [];
-    this.showToast('Logged out.', 'info');
+    toastHandler.showToast('Logged out.', 'info');
   }
 
   async fetchRepos() {
     try {
-      const res = await this.apiFetch('/api/repositories');
+      const res = await apiFetch('/api/repositories');
       if (res.ok) {
         this.repositories = await res.json();
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   async fetchIncidents() {
     try {
-      const res = await this.apiFetch('/api/incidents');
+      const res = await apiFetch('/api/incidents');
       if (res.ok) {
         this.incidents = await res.json();
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   async clearIncidents() {
     try {
-      const res = await this.apiFetch('/api/incidents', { method: 'DELETE' });
+      const res = await apiFetch('/api/incidents', { method: 'DELETE' });
       if (res.ok) {
         this.incidents = [];
-        this.showToast('All incidents cleared.', 'info');
+        toastHandler.showToast('All incidents cleared.', 'info');
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 }
 
 export const api = new GitPatrolAPI();
+export const toastHandler = new ToastHandler();

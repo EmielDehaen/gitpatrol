@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api, API_URL } from '$lib/api.svelte';
+  import { api, apiFetch, toastHandler } from '$lib/api.svelte';
   import { suggestName, humanToMinutes, getNormalizedUrl, getAvatarUrl } from '$lib/utils';
   import { fade } from 'svelte/transition';
 
@@ -24,7 +24,7 @@
   async function handleAdd() {
     if (!name || !url) return;
     try {
-      const res = await api.apiFetch('/api/repositories', {
+      const res = await apiFetch('/api/repositories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -37,10 +37,10 @@
       if (res.ok) {
         url = ''; name = ''; autoPatrol = true; intervalString = '1h'; show = false;
         api.fetchRepos();
-        api.showToast('Patrol deployed successfully!', 'success');
+        toastHandler.showToast('Patrol deployed successfully!', 'success');
       } else {
         const err = await res.json();
-        api.showToast(err.error || 'Failed to deploy patrol.', 'error');
+        toastHandler.showToast(err.error || 'Failed to deploy patrol.', 'error');
       }
     } catch (e) {}
   }
