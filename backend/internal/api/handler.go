@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"gitpatrol/internal/auth"
+	"gitpatrol/internal/config"
 	"gitpatrol/internal/database"
 	"gitpatrol/internal/models"
 	"gitpatrol/internal/service"
@@ -25,15 +26,17 @@ type Handler struct {
 	syncManager *service.SyncManager
 	repoService *service.RepoService
 	hub         *websocket.Hub
+	config      *config.Config
 }
 
-func NewHandler(db *database.DB, authService *auth.AuthService, syncManager *service.SyncManager, repoService *service.RepoService, hub *websocket.Hub) *Handler {
+func NewHandler(db *database.DB, authService *auth.AuthService, syncManager *service.SyncManager, repoService *service.RepoService, hub *websocket.Hub, cfg *config.Config) *Handler {
 	return &Handler{
 		db:          db,
 		authService: authService,
 		syncManager: syncManager,
 		repoService: repoService,
 		hub:         hub,
+		config:      cfg,
 	}
 }
 
@@ -58,6 +61,8 @@ func (h *Handler) RegisterRoutes(e *echo.Echo) {
 	api.GET("/repositories/:id/assets/*", h.GetAsset)
 	api.GET("/incidents", h.GetIncidents)
 	api.DELETE("/incidents", h.ClearIncidents)
+	api.GET("/settings", h.GetSettings)
+	api.PATCH("/settings", h.UpdateSettings)
 
 	e.GET("/ws", h.hub.HandleWebSocket)
 }

@@ -28,7 +28,7 @@ func main() {
 	os.MkdirAll("./data", 0755)
 
 	hub := websocket.NewHub()
-	repoService := service.NewRepoService(db, hub)
+	repoService := service.NewRepoService(db, hub, cfg)
 	syncManager := service.NewSyncManager(cfg.WorkerCount, db, hub, repoService)
 	authService := auth.NewAuthService(cfg, db)
 
@@ -42,7 +42,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	h := api.NewHandler(db, authService, syncManager, repoService, hub)
+	h := api.NewHandler(db, authService, syncManager, repoService, hub, cfg)
 	h.RegisterRoutes(e)
 
 	e.Static("/avatars", "./data/avatars")
