@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"gitpatrol/internal/config"
 	"gitpatrol/internal/database"
 	"gitpatrol/internal/models"
 	"gitpatrol/internal/source"
@@ -21,12 +22,14 @@ import (
 type RepoService struct {
 	db  *database.DB
 	hub *websocket.Hub
+	cfg *config.Config
 }
 
-func NewRepoService(db *database.DB, hub *websocket.Hub) *RepoService {
+func NewRepoService(db *database.DB, hub *websocket.Hub, cfg *config.Config) *RepoService {
 	return &RepoService{
 		db:  db,
 		hub: hub,
+		cfg: cfg,
 	}
 }
 
@@ -48,7 +51,7 @@ func (s *RepoService) SyncRepo(id int, url, name string) {
 		}
 	}
 
-	src, err := source.GetSource(url)
+	src, err := source.GetSource(url, s.cfg.GithubToken, s.cfg.GitlabToken)
 	var meta models.Metadata
 	if err == nil {
 		meta, _ = src.GetMetadata(url)
