@@ -1,0 +1,11 @@
+services:
+  gitpatrol:
+    image: efinityhub/gitpatrol:latest
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/var/lib/gitpatrol
+    restart: unless-stopped
