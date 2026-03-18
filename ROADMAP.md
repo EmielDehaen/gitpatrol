@@ -55,9 +55,9 @@ This document outlines the development milestones for **GitPatrol**, an autonomo
     - Standardized error handling and API communication.
     - Added instructions for Health Badge embedding.
 
-11. [ ] **One-click Repository Import (Manager of Choice)**
+11. [x] **One-click Repository Export (Manager of Choice)**
     - Implement a bridge to push local mirrors directly to a destination Git host (e.g., Gitea, Forgejo, GitHub, GitLab).
-    - **Logic:** Add a "Deploy to..." button in the repository detail view.
+    - **Logic:** Added a "Deploy to..." button in the repository detail view.
     - **UX:** One-click transfer of archived code and metadata to a fresh instance for recovery or migration.
 
 12. [x] **Provider Token Support via Environment Variables**
@@ -69,6 +69,12 @@ This document outlines the development milestones for **GitPatrol**, an autonomo
     - Provide an official Docker image on Docker Hub for rapid deployment.
     - Simplified environment configuration for quick setup.
 
-14. [ ] **Proxmox LXC Install Script**
+14. [x] **Proxmox LXC Install Script & Systemd Persistence**
     - Create a dedicated install script for Proxmox (LXC container).
-    - Aim for official inclusion in **Proxmox Helper Scripts** to allow easy homelab installation.
+    - **Persistence:** Provided `systemd` unit files to ensure GitPatrol starts automatically on boot and recovers from crashes.
+    - **Release:** Automated GitHub Release workflow for binary distribution.
+
+15. [x] **Surgical Health & Status Monitoring**
+    - **Backend:** Implemented a `/api/health` endpoint monitoring Internet connectivity (8.8.8.8), Disk Space availability, and Database integrity.
+    - **Autonomy:** Backend logs system incidents and broadcasts health status via WebSockets.
+    - **Frontend:** Upgraded the "System Online" badge to a dynamic traffic-light system with real-time metrics.
