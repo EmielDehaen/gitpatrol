@@ -24,26 +24,29 @@ Built for the **Efinity** standard: minimalist, fast, and visually polished.
 
 ---
 
-## 🛠️ Tech Stack
-- **Backend:** Go (Golang 1.24) + Echo + SQLite
-- **Frontend:** SvelteKit + Bun + Tailwind CSS 4.0
-- **Deployment:** Docker & Docker Compose
+## 🚀 Professional Installation (Linux / Proxmox)
+The fastest way to deploy GitPatrol on your server or LXC container is using the unified installer. It automatically detects your architecture (AMD64/ARM64) and installs the latest pre-built binary.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/efinityhub/gitpatrol/main/scripts/install.sh | sudo bash
+```
+*This will set up GitPatrol as a **systemd service** and start it on port 8080.*
 
 ---
 
-## 📖 Documentation
-Detailed documentation is available in the `docs/` folder:
-- [**Introduction**](docs/introduction.md) - What is GitPatrol and why use it.
-- [**Features**](docs/features.md) - Deep dive into core functionality.
-- [**Architecture**](docs/architecture.md) - How the system works under the hood.
-- [**Setup & Installation**](docs/setup.md) - How to get GitPatrol running.
+## 🐳 Quick Start (Docker)
+If you prefer Docker, you can use the provided compose file:
 
----
-
-## 🚀 Quick Start (Docker)
-1.  **Clone:** `git clone https://github.com/EmielDehaen/gitpatrol.git`
+1.  **Clone:** `git clone https://github.com/efinityhub/gitpatrol.git`
 2.  **Run:** `docker-compose up -d`
 3.  **Enjoy:** Open `http://localhost:3000` and follow the bootstrap instructions.
+
+---
+
+## 🛠️ Tech Stack & Single Binary
+- **Backend:** Go (Golang 1.24) + Echo + SQLite
+- **Frontend:** SvelteKit 5 + Tailwind CSS 4.0
+- **Industrial Design:** The production build is a **single, self-contained binary** (approx. 17MB) with the entire frontend embedded. No Node.js or external dependencies required to run.
 
 ---
 
