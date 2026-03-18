@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"gitpatrol/internal/auth"
@@ -63,8 +65,67 @@ func (h *Handler) RegisterRoutes(e *echo.Echo) {
 	api.DELETE("/incidents", h.ClearIncidents)
 	api.GET("/settings", h.GetSettings)
 	api.PATCH("/settings", h.UpdateSettings)
+	api.GET("/health", h.GetHealth)
 
 	e.GET("/ws", h.hub.HandleWebSocket)
+}
+
+func (h *Handler) GetHealth(c echo.Context) error {
+	status := "healthy"
+	checks := make(map[string]interface{})
+
+	// 1. Internet Check
+	internet := true
+	start := time.Now()
+	conn, err := net.DialTimeout("tcp", "8.8.8.8:53", 2*time.Second)
+	if err != nil {
+		internet = false
+		status = "degraded"
+	} else {
+		conn.Close()
+	}
+	checks["internet"] = map[string]interface{}{
+		"connected": internet,
+		"latency":   time.Since(start).String(),
+	}
+
+	// 2. Disk Space Check
+	var stat syscall.Statfs_t
+	wd, _ := os.Getwd()
+	err = syscall.Statfs(wd, &stat)
+	if err == nil {
+		free := stat.Bavail * uint64(stat.Bsize)
+		total := stat.Blocks * uint64(stat.Bsize)
+		used := total - free
+		percent := float64(used) / float64(total) * 100
+
+		checks["disk"] = map[string]interface{}{
+			"free_bytes":   free,
+			"total_bytes":  total,
+			"used_percent": fmt.Sprintf("%.1f%%", percent),
+		}
+
+		if percent > 90 {
+			status = "critical"
+		}
+	}
+
+	// 3. Database Check
+	dbStatus := true
+	if err := h.db.Ping(); err != nil {
+		dbStatus = false
+		status = "critical"
+	}
+	checks["database"] = dbStatus
+
+	// 4. Worker Pool
+	checks["workers"] = h.syncManager.GetStats()
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":    status,
+		"checks":    checks,
+		"timestamp": time.Now(),
+	})
 }
 
 func (h *Handler) CheckAuthStatus(c echo.Context) error {

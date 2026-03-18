@@ -36,11 +36,15 @@ class GitPatrolAPI {
   user = $state<User | null>(null);
   repositories = $state<Repository[]>([]);
   incidents = $state<Incident[]>([]);
+  healthStatus = $state<{ status: string, checks: any } | null>(null);
   authLoading = $state(true);
   settings = new SettingsAPI();
 
   constructor() {
     this.checkAuth();
+    setInterval(() => {
+      if (this.isAuthenticated) this.fetchHealth();
+    }, 30000);
   }
 
   async checkAuth() {
@@ -57,11 +61,26 @@ class GitPatrolAPI {
         }
         this.fetchRepos();
         this.fetchIncidents();
+        this.fetchHealth();
       }
     } catch (e) {
       console.error('Auth check failed', e);
+      this.healthStatus = { status: 'offline', checks: {} };
     } finally {
       this.authLoading = false;
+    }
+  }
+
+  async fetchHealth() {
+    try {
+      const res = await apiFetch('/api/health');
+      if (res.ok) {
+        this.healthStatus = await res.json();
+      } else {
+        this.healthStatus = { status: 'offline', checks: {} };
+      }
+    } catch (e) {
+      this.healthStatus = { status: 'offline', checks: {} };
     }
   }
 

@@ -66,3 +66,13 @@ func (m *SyncManager) worker(id int) {
 		m.mu.Unlock()
 	}
 }
+
+func (m *SyncManager) GetStats() map[string]interface{} {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return map[string]interface{}{
+		"active_tasks":  len(m.activeTasks),
+		"queued_tasks":  len(m.tasks),
+		"total_workers": m.workerCount,
+	}
+}
