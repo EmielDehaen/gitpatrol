@@ -36,6 +36,7 @@
             api.fetchIncidents();
           } else if (data.type === 'health_update') {
             api.healthStatus = data.health;
+            api.setupHealthPolling(); // Reset the 1-minute fallback timer
           }
         } catch (e) {
           api.fetchRepos();
