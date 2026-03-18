@@ -99,7 +99,7 @@ func (s *HealthService) PerformCheck() {
 	s.checks = checks
 	s.mu.Unlock()
 
-	// Handle status changes
+	// Handle status changes or periodic heartbeat
 	if newStatus != oldStatus {
 		log.Printf("[HEALTH] System status changed: %s -> %s", oldStatus, newStatus)
 		
@@ -111,18 +111,17 @@ func (s *HealthService) PerformCheck() {
 			s.db.Exec("INSERT INTO incidents (repo_id, repo_name, message, created_at) VALUES (?, ?, ?, ?)", 
 				nil, "SYSTEM", message, time.Now())
 		} else {
-			// Optional: log recovery
 			s.db.Exec("INSERT INTO incidents (repo_id, repo_name, message, created_at, resolved) VALUES (?, ?, ?, ?, ?)", 
 				nil, "SYSTEM", "System recovered to healthy state.", time.Now(), 1)
 		}
-
-		// Broadcast via WebSocket
-		s.hub.BroadcastHealthStatus(map[string]interface{}{
-			"status":    newStatus,
-			"checks":    checks,
-			"timestamp": time.Now(),
-		})
 	}
+
+	// Always broadcast current health as a heartbeat to keep UI timers fresh
+	s.hub.BroadcastHealthStatus(map[string]interface{}{
+		"status":    newStatus,
+		"checks":    checks,
+		"timestamp": time.Now(),
+	})
 }
 
 func (s *HealthService) GetStatus() map[string]interface{} {

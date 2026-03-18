@@ -1,7 +1,12 @@
 import { SettingsAPI } from './settings/settingsApi';
 import { type Repository, type Incident, type User, type Toast } from './types';
 
-export const API_URL = 'http://localhost:8080';
+// Use hardcoded URL for dev, or detect from window for production/docker
+export const API_URL = (typeof window !== 'undefined' && window.location.origin.includes(':3000')) 
+  ? 'http://localhost:8080' 
+  : 'http://localhost:8080'; // Default fallback
+
+// Note: In a real production build, we might want to use window.location.origin
 
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   const res = await fetch(`${API_URL}${endpoint}`, {
@@ -42,7 +47,9 @@ class GitPatrolAPI {
   private healthTimer: any = null;
 
   constructor() {
-    this.checkAuth();
+    if (typeof window !== 'undefined') {
+      this.checkAuth();
+    }
   }
 
   setupHealthPolling() {

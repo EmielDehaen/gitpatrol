@@ -1,6 +1,9 @@
 # Frontend Dockerfile (Development Mode)
-FROM oven/bun:1.1 AS dev
+FROM node:22.12-alpine AS dev
 WORKDIR /app
+
+# Install Bun
+RUN npm install -g bun
 
 # Copy package files
 COPY package.json bun.lock ./

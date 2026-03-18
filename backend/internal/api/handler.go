@@ -67,7 +67,14 @@ func (h *Handler) RegisterRoutes(e *echo.Echo) {
 	api.PATCH("/settings", h.UpdateSettings)
 	api.GET("/health", h.GetHealth)
 
-	e.GET("/ws", h.hub.HandleWebSocket)
+	e.GET("/ws", func(c echo.Context) error {
+		err := h.hub.HandleWebSocket(c)
+		if err == nil {
+			// Immediately send current health upon connection
+			h.hub.BroadcastHealthStatus(h.healthService.GetStatus())
+		}
+		return err
+	})
 }
 
 func (h *Handler) GetHealth(c echo.Context) error {
