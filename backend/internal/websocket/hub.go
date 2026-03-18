@@ -61,3 +61,16 @@ func (h *Hub) BroadcastStatus(id int, status, errMsg string) {
 	}
 	h.mu.Unlock()
 }
+
+func (h *Hub) BroadcastHealthStatus(health map[string]interface{}) {
+	msg, _ := json.Marshal(map[string]interface{}{
+		"type":   "health_update",
+		"health": health,
+	})
+
+	h.mu.Lock()
+	for client := range h.clients {
+		client.WriteMessage(websocket.TextMessage, msg)
+	}
+	h.mu.Unlock()
+}

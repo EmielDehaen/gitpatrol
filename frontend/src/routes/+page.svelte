@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
-  import { api } from '$lib/api.svelte';
+  import { api, API_URL } from '$lib/api.svelte';
   import { getProgress } from '$lib/utils';
   import { type Repository } from '$lib/types';
 
@@ -25,11 +25,22 @@
   let showUserModal = $state(false);
 
   onMount(() => {
-    const ws = new WebSocket('ws://localhost:8080/ws');
-    ws.onmessage = () => {
+    const wsUrl = API_URL.replace('http', 'ws') + '/ws';
+    const ws = new WebSocket(wsUrl);
+    ws.onmessage = (event) => {
       if (api.isAuthenticated) {
-        api.fetchRepos();
-        api.fetchIncidents();
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'status_update') {
+            api.fetchRepos();
+            api.fetchIncidents();
+          } else if (data.type === 'health_update') {
+            api.healthStatus = data.health;
+          }
+        } catch (e) {
+          api.fetchRepos();
+          api.fetchIncidents();
+        }
       }
     };
     const timer = setInterval(() => {

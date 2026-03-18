@@ -4,13 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"gitpatrol/internal/auth"
@@ -23,22 +21,24 @@ import (
 )
 
 type Handler struct {
-	db          *database.DB
-	authService *auth.AuthService
-	syncManager *service.SyncManager
-	repoService *service.RepoService
-	hub         *websocket.Hub
-	config      *config.Config
+	db            *database.DB
+	authService   *auth.AuthService
+	syncManager   *service.SyncManager
+	repoService   *service.RepoService
+	healthService *service.HealthService
+	hub           *websocket.Hub
+	config        *config.Config
 }
 
-func NewHandler(db *database.DB, authService *auth.AuthService, syncManager *service.SyncManager, repoService *service.RepoService, hub *websocket.Hub, cfg *config.Config) *Handler {
+func NewHandler(db *database.DB, authService *auth.AuthService, syncManager *service.SyncManager, repoService *service.RepoService, healthService *service.HealthService, hub *websocket.Hub, cfg *config.Config) *Handler {
 	return &Handler{
-		db:          db,
-		authService: authService,
-		syncManager: syncManager,
-		repoService: repoService,
-		hub:         hub,
-		config:      cfg,
+		db:            db,
+		authService:   authService,
+		syncManager:   syncManager,
+		repoService:   repoService,
+		healthService: healthService,
+		hub:           hub,
+		config:        cfg,
 	}
 }
 
@@ -71,61 +71,7 @@ func (h *Handler) RegisterRoutes(e *echo.Echo) {
 }
 
 func (h *Handler) GetHealth(c echo.Context) error {
-	status := "healthy"
-	checks := make(map[string]interface{})
-
-	// 1. Internet Check
-	internet := true
-	start := time.Now()
-	conn, err := net.DialTimeout("tcp", "8.8.8.8:53", 2*time.Second)
-	if err != nil {
-		internet = false
-		status = "degraded"
-	} else {
-		conn.Close()
-	}
-	checks["internet"] = map[string]interface{}{
-		"connected": internet,
-		"latency":   time.Since(start).String(),
-	}
-
-	// 2. Disk Space Check
-	var stat syscall.Statfs_t
-	wd, _ := os.Getwd()
-	err = syscall.Statfs(wd, &stat)
-	if err == nil {
-		free := stat.Bavail * uint64(stat.Bsize)
-		total := stat.Blocks * uint64(stat.Bsize)
-		used := total - free
-		percent := float64(used) / float64(total) * 100
-
-		checks["disk"] = map[string]interface{}{
-			"free_bytes":   free,
-			"total_bytes":  total,
-			"used_percent": fmt.Sprintf("%.1f%%", percent),
-		}
-
-		if percent > 90 {
-			status = "critical"
-		}
-	}
-
-	// 3. Database Check
-	dbStatus := true
-	if err := h.db.Ping(); err != nil {
-		dbStatus = false
-		status = "critical"
-	}
-	checks["database"] = dbStatus
-
-	// 4. Worker Pool
-	checks["workers"] = h.syncManager.GetStats()
-
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"status":    status,
-		"checks":    checks,
-		"timestamp": time.Now(),
-	})
+	return c.JSON(http.StatusOK, h.healthService.GetStatus())
 }
 
 func (h *Handler) CheckAuthStatus(c echo.Context) error {
