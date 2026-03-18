@@ -1,0 +1,57 @@
+name: Release GitPatrol
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on version tags (e.g., v1.0.1)
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: |
+          npm install
+          npm run build
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Build Backend (AMD64)
+        working-directory: ./backend
+        run: |
+          mkdir -p cmd/gitpatrol/build
+          cp -r ../frontend/build/* cmd/gitpatrol/build/
+          GOOS=linux GOARCH=amd64 go build -v -o gitpatrol-linux-amd64 ./cmd/gitpatrol/main.go
+
+      - name: Build Backend (ARM64)
+        working-directory: ./backend
+        run: |
+          GOOS=linux GOARCH=arm64 go build -v -o gitpatrol-linux-arm64 ./cmd/gitpatrol/main.go
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            backend/gitpatrol-linux-amd64
+            backend/gitpatrol-linux-arm64
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
