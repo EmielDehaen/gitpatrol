@@ -25,9 +25,12 @@
         <div class="bell-count">{api.incidents.length}</div>
       {/if}
     </button>
-    <div class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05);">
-      <span style="width: 6px; height: 6px; background: var(--status-green); border-radius: 50%;"></span>
-      SYSTEM ONLINE
+    <div 
+      class="badge status-{api.healthStatus?.status || 'offline'}" 
+      data-tooltip={api.healthStatus ? `Internet: ${api.healthStatus.checks.internet.connected ? 'OK' : 'OFF'} | Disk: ${api.healthStatus.checks.disk.used_percent}` : 'Checking...'}
+    >
+      <span class="dot"></span>
+      {api.healthStatus ? (api.healthStatus.status === 'healthy' ? 'SYSTEM ONLINE' : api.healthStatus.status.toUpperCase()) : 'OFFLINE'}
     </div>
     <div class="user-profile" onclick={() => showUserModal = true} data-tooltip="User Settings" role='button' onkeypress={() => {}} tabindex=0>
       <div class="avatar-circle">{api.user?.username ? api.user.username.charAt(0) : 'U'}</div>

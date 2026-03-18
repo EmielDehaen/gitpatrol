@@ -21,22 +21,24 @@ import (
 )
 
 type Handler struct {
-	db          *database.DB
-	authService *auth.AuthService
-	syncManager *service.SyncManager
-	repoService *service.RepoService
-	hub         *websocket.Hub
-	config      *config.Config
+	db            *database.DB
+	authService   *auth.AuthService
+	syncManager   *service.SyncManager
+	repoService   *service.RepoService
+	healthService *service.HealthService
+	hub           *websocket.Hub
+	config        *config.Config
 }
 
-func NewHandler(db *database.DB, authService *auth.AuthService, syncManager *service.SyncManager, repoService *service.RepoService, hub *websocket.Hub, cfg *config.Config) *Handler {
+func NewHandler(db *database.DB, authService *auth.AuthService, syncManager *service.SyncManager, repoService *service.RepoService, healthService *service.HealthService, hub *websocket.Hub, cfg *config.Config) *Handler {
 	return &Handler{
-		db:          db,
-		authService: authService,
-		syncManager: syncManager,
-		repoService: repoService,
-		hub:         hub,
-		config:      cfg,
+		db:            db,
+		authService:   authService,
+		syncManager:   syncManager,
+		repoService:   repoService,
+		healthService: healthService,
+		hub:           hub,
+		config:        cfg,
 	}
 }
 
@@ -63,8 +65,13 @@ func (h *Handler) RegisterRoutes(e *echo.Echo) {
 	api.DELETE("/incidents", h.ClearIncidents)
 	api.GET("/settings", h.GetSettings)
 	api.PATCH("/settings", h.UpdateSettings)
+	api.GET("/health", h.GetHealth)
 
 	e.GET("/ws", h.hub.HandleWebSocket)
+}
+
+func (h *Handler) GetHealth(c echo.Context) error {
+	return c.JSON(http.StatusOK, h.healthService.GetStatus())
 }
 
 func (h *Handler) CheckAuthStatus(c echo.Context) error {

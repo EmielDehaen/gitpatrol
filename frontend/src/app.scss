@@ -273,6 +273,27 @@ h1 {
 .badge {
   font-size: 0.75rem; font-weight: 700; padding: 6px 14px; border-radius: 10px;
   text-transform: uppercase; background: rgba(255, 255, 255, 0.05); display: inline-flex; align-items: center; gap: 8px;
+
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%; display: inline-block;
+  }
+
+  &.status-healthy {
+    color: var(--status-green); background: rgba(0, 255, 136, 0.05);
+    .dot { background: var(--status-green); box-shadow: 0 0 10px var(--status-green); }
+  }
+  &.status-degraded {
+    color: var(--status-yellow); background: rgba(255, 204, 0, 0.05);
+    .dot { background: var(--status-yellow); box-shadow: 0 0 10px var(--status-yellow); }
+  }
+  &.status-critical {
+    color: var(--status-red); background: rgba(255, 77, 77, 0.05);
+    .dot { background: var(--status-red); box-shadow: 0 0 10px var(--status-red); }
+  }
+  &.status-offline {
+    color: var(--efinity-text-muted); background: rgba(255, 255, 255, 0.05);
+    .dot { background: var(--efinity-text-muted); }
+  }
 }
 
 .branch-badge {

@@ -31,6 +31,9 @@ func main() {
 	repoService := service.NewRepoService(db, hub, cfg)
 	syncManager := service.NewSyncManager(cfg.WorkerCount, db, hub, repoService)
 	authService := auth.NewAuthService(cfg, db)
+	healthService := service.NewHealthService(db, hub, syncManager)
+
+	healthService.Start()
 
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -42,7 +45,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	h := api.NewHandler(db, authService, syncManager, repoService, hub, cfg)
+	h := api.NewHandler(db, authService, syncManager, repoService, healthService, hub, cfg)
 	h.RegisterRoutes(e)
 
 	e.Static("/avatars", "./data/avatars")
