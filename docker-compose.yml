@@ -4,13 +4,18 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./backend/data:/root/data
-      - ./backend/db:/root/db
+      - ./backend/data:/app/data
+      - ./backend/db:/app/db
+    environment:
+      - DB_PATH=./db/gitpatrol.db
 
   frontend:
     build: ./frontend
     ports:
-      - "3000:3000"
+      - "3000:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
       - PUBLIC_API_URL=http://localhost:8080
     depends_on:

@@ -1,15 +1,18 @@
-# Backend Dockerfile
+# Backend Dockerfile (Development Mode)
 FROM golang:1.24-alpine AS builder
 WORKDIR /app
+RUN apk add --no-cache git
+
 COPY go.mod go.sum ./
 RUN go mod download
-COPY cmd/ cmd/
-COPY internal/ internal/
+
+COPY . .
+
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/gitpatrol
 
 FROM alpine:latest
-RUN apk add --no-cache git
-WORKDIR /root/
+RUN apk add --no-cache git curl
+WORKDIR /app
 COPY --from=builder /app/main .
 EXPOSE 8080
 CMD ["./main"]
