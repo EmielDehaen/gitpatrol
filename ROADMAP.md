@@ -65,9 +65,10 @@ This document outlines the development milestones for **GitPatrol**, an autonomo
     - **Feature:** Automatically inject these tokens into sync requests to avoid rate limits and allow cloning of private repositories (within the user's scope).
     - **Security:** Ensure tokens are only used for the intended provider and never logged.
 
-13. [ ] **Docker Hub Support**
+13. [x] **Docker Hub Support**
     - Provide an official Docker image on Docker Hub for rapid deployment.
-    - Simplified environment configuration for quick setup.
+    - **Optimization:** Multi-stage build producing a minimal Alpine-based image with the single binary.
+    - **Automation:** GitHub Action to build and push images on every release tag.
 
 14. [x] **Proxmox LXC Install Script & Systemd Persistence**
     - Create a dedicated install script for Proxmox (LXC container).

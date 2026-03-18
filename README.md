@@ -24,6 +24,26 @@ Built for the **Efinity** standard: minimalist, fast, and visually polished.
 
 ---
 
+## 🐳 Docker Deployment
+GitPatrol offers two ways to run with Docker:
+
+### 1. Production (Recommended)
+Uses the optimized **single-binary image** (approx. 30MB). This is the fastest and most resource-efficient way to run GitPatrol.
+
+```bash
+docker-compose -f docker-compose.production.yml up -d
+```
+*The image `efinityhub/gitpatrol:latest` is automatically updated on every release.*
+
+### 2. Development
+If you want to modify the source code and see changes in real-time, use the standard compose file:
+
+```bash
+docker-compose up -d
+```
+
+---
+
 ## 🚀 Professional Installation (Linux / VPS / Laptop)
 The fastest way to deploy GitPatrol on any Debian-based system. This script automatically detects your architecture (AMD64/ARM64) and sets up a **systemd service**.
 
