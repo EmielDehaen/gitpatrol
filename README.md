@@ -24,26 +24,38 @@ Built for the **Efinity** standard: minimalist, fast, and visually polished.
 
 ---
 
-## 🛠️ Tech Stack
-- **Backend:** Go (Golang 1.24) + Echo + SQLite
-- **Frontend:** SvelteKit + Bun + Tailwind CSS 4.0
-- **Deployment:** Docker & Docker Compose
+## 🚀 Professional Installation (Linux / VPS / Laptop)
+The fastest way to deploy GitPatrol on any Debian-based system. This script automatically detects your architecture (AMD64/ARM64) and sets up a **systemd service**.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/efinityhub/gitpatrol/main/scripts/install.sh | sudo bash
+```
 
 ---
 
-## 📖 Documentation
-Detailed documentation is available in the `docs/` folder:
-- [**Introduction**](docs/introduction.md) - What is GitPatrol and why use it.
-- [**Features**](docs/features.md) - Deep dive into core functionality.
-- [**Architecture**](docs/architecture.md) - How the system works under the hood.
-- [**Setup & Installation**](docs/setup.md) - How to get GitPatrol running.
+## ⚡ Proxmox LXC Deployment
+GitPatrol is fully compatible with the **Community-Scripts (tteck)** standard. Use the dedicated provisioner to create a fresh, optimized LXC container in seconds.
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/efinityhub/gitpatrol/main/proxmox/ct/gitpatrol.sh)"
+```
+*This script will handle container creation, resource allocation (RAM/CPU), and the full automated installation.*
 
 ---
 
-## 🚀 Quick Start (Docker)
-1.  **Clone:** `git clone https://github.com/EmielDehaen/gitpatrol.git`
+## 🐳 Quick Start (Docker)
+If you prefer container isolation via Docker, use the provided compose file:
+
+1.  **Clone:** `git clone https://github.com/efinityhub/gitpatrol.git`
 2.  **Run:** `docker-compose up -d`
 3.  **Enjoy:** Open `http://localhost:3000` and follow the bootstrap instructions.
+
+---
+
+## 🛠️ Tech Stack & Single Binary
+- **Backend:** Go (Golang 1.24) + Echo + SQLite
+- **Frontend:** SvelteKit 5 + Tailwind CSS 4.0
+- **Industrial Design:** The production build is a **single, self-contained binary** (approx. 17MB) with the entire frontend embedded. No Node.js or external dependencies are required to run, making it extremely lightweight for homelab environments.
 
 ---
 

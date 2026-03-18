@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"embed"
 	"log"
 	"os"
 	"time"
@@ -15,6 +16,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
+
+//go:embed build/*
+var uiBuild embed.FS
 
 func main() {
 	cfg := config.LoadConfig("./db/gitpatrol.env")
@@ -49,6 +53,11 @@ func main() {
 	h.RegisterRoutes(e)
 
 	e.Static("/avatars", "./data/avatars")
+
+	// UI Service (Embedded)
+	service.UI = uiBuild
+	uiService := service.NewUIService()
+	uiService.RegisterRoutes(e)
 
 	// Scheduler
 	go func() {
