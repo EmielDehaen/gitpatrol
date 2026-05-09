@@ -106,21 +106,19 @@
           <option value="gitlab">GITLAB VAULT</option>
           <option value="gitea">GITEA RECOVERY</option>
         </select>
-
-        {#if exportDestination === 'github'}
-          <label for='github'>GITHUB TOKEN</label>
-          <input id='github' type='text' bind:value={githubToken} placeholder={ hasGithubToken ? '*****************************************************************************' : 'Secret github token'} />
-        {:else if exportDestination === 'gitlab'}
+        {#if exportDestination === 'gitlab'}
           <label for='gitlab_url'>GITLAB URL</label>
           <input id='gitlab_url' type='text' bind:value={gitlabURL} placeholder="https://gitlab.com" />
-          <label for='gitlab'>GITLAB TOKEN</label>
-          <input id='gitlab' type='text' bind:value={gitlabToken} placeholder={ hasGitlabToken ? '*****************************************************************************' : 'Secret gitlab token'} />
         {:else if exportDestination === 'gitea'}
           <label for='gitea_url'>GITEA URL</label>
           <input id='gitea_url' type='text' bind:value={giteaURL} placeholder="https://gitea.example.com" />
-          <label for='gitea_token'>GITEA TOKEN</label>
-          <input id='gitea_token' type='text' bind:value={giteaToken} placeholder={ hasGiteaToken ? '*****************************************************************************' : 'Secret gitea token'} />
         {/if}
+        <label for='github'>GITHUB TOKEN</label>
+        <input id='github' type='text' bind:value={githubToken} placeholder={ hasGithubToken ? '*****************************************************************************' : 'Secret github token'} />
+        <label for='gitlab'>GITLAB TOKEN</label>
+        <input id='gitlab' type='text' bind:value={gitlabToken} placeholder={ hasGitlabToken ? '*****************************************************************************' : 'Secret gitlab token'} />
+        <label for='gitea_token'>GITEA TOKEN</label>
+        <input id='gitea_token' type='text' bind:value={giteaToken} placeholder={ hasGiteaToken ? '*****************************************************************************' : 'Secret gitea token'} />
       </div>
 
       <div style="display: flex; gap: 16px;">
