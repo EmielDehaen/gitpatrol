@@ -15,7 +15,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           interval_minutes: humanToMinutes(intervalString), 
-          auto_patrol: repo.auto_patrol 
+          auto_patrol: parseInt(repo.auto_patrol)
         })
       });
       if (res.ok) { 

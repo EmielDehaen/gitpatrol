@@ -11,13 +11,17 @@ import (
 )
 
 type Config struct {
-	JWTSecret      string
-	PasswordPepper string
-	DBPath         string
-	WorkerCount    int
-	GithubToken    string
-	GitlabToken    string
-	envPath        string
+	JWTSecret         string
+	PasswordPepper    string
+	DBPath            string
+	WorkerCount       int
+	GithubToken       string
+	GitlabURL         string
+	GitlabToken       string
+	GiteaURL          string
+	GiteaToken        string
+	ExportDestination string
+	envPath           string
 }
 
 func LoadConfig(envPath string) *Config {
@@ -54,53 +58,77 @@ func LoadConfig(envPath string) *Config {
 	}
 
 	github := os.Getenv("GITHUB_TOKEN")
-	if github == "" {
-		log.Printf("[CONFIG] Info: no github env token found. We'll use the public api. Go to settings to add one.")
+	gitlabURL := os.Getenv("GITLAB_URL")
+	if gitlabURL == "" {
+		gitlabURL = "https://gitlab.com"
 	}
-
-	gitlab := os.Getenv("GITLAB_TOKEN")
-	if gitlab == "" {
-		log.Printf("[CONFIG] Info: no gitlab env token found. Can't use gitlab. Go to settings to add one.")
-	}
+	gitlabToken := os.Getenv("GITLAB_TOKEN")
+	giteaURL := os.Getenv("GITEA_URL")
+	giteaToken := os.Getenv("GITEA_TOKEN")
+	exportDest := os.Getenv("EXPORT_DESTINATION")
 
 	if modified {
-		_ = saveEnv(envPath, jwtSecret, pepper, dbPath, github, gitlab, workerCount)
+		_ = saveEnv(envPath, jwtSecret, pepper, dbPath, github, gitlabURL, gitlabToken, giteaURL, giteaToken, exportDest, workerCount)
 	}
 
 	return &Config{
-		JWTSecret:      jwtSecret,
-		PasswordPepper: pepper,
-		DBPath:         dbPath,
-		WorkerCount:    workerCount,
-		GithubToken:    github,
-		GitlabToken:    gitlab,
-		envPath:        envPath,
+		JWTSecret:         jwtSecret,
+		PasswordPepper:    pepper,
+		DBPath:            dbPath,
+		WorkerCount:       workerCount,
+		GithubToken:       github,
+		GitlabURL:         gitlabURL,
+		GitlabToken:       gitlabToken,
+		GiteaURL:          giteaURL,
+		GiteaToken:        giteaToken,
+		ExportDestination: exportDest,
+		envPath:           envPath,
 	}
 }
 
-func (c *Config) UpdateTokens(github, gitlab string) error {
+func (c *Config) UpdateTokens(github, gitlabURL, gitlabToken, giteaURL, giteaToken, exportDest string) error {
 	if github != "" {
 		c.GithubToken = github
 		os.Setenv("GITHUB_TOKEN", github)
 	}
-	if gitlab != "" {
-		c.GitlabToken = gitlab
-		os.Setenv("GITLAB_TOKEN", gitlab)
+	if gitlabURL != "" {
+		c.GitlabURL = gitlabURL
+		os.Setenv("GITLAB_URL", gitlabURL)
+	}
+	if gitlabToken != "" {
+		c.GitlabToken = gitlabToken
+		os.Setenv("GITLAB_TOKEN", gitlabToken)
+	}
+	if giteaURL != "" {
+		c.GiteaURL = giteaURL
+		os.Setenv("GITEA_URL", giteaURL)
+	}
+	if giteaToken != "" {
+		c.GiteaToken = giteaToken
+		os.Setenv("GITEA_TOKEN", giteaToken)
+	}
+	if exportDest != "" {
+		c.ExportDestination = exportDest
+		os.Setenv("EXPORT_DESTINATION", exportDest)
 	}
 
-	err := saveEnv(c.envPath, c.JWTSecret, c.PasswordPepper, c.DBPath, c.GithubToken, c.GitlabToken, c.WorkerCount)
+	err := saveEnv(c.envPath, c.JWTSecret, c.PasswordPepper, c.DBPath, c.GithubToken, c.GitlabURL, c.GitlabToken, c.GiteaURL, c.GiteaToken, c.ExportDestination, c.WorkerCount)
 
 	return err
 }
 
-func saveEnv(path, jwt, pepper, dbPath, github, gitlab string, workerCount int) error {
+func saveEnv(path, jwt, pepper, dbPath, github, gitlabURL, gitlabToken, giteaURL, giteaToken, exportDest string, workerCount int) error {
 	env := map[string]string{
-		"JWT_SECRET":      jwt,
-		"PASSWORD_PEPPER": pepper,
-		"DB_PATH":         dbPath,
-		"WORKERS":         strconv.Itoa(workerCount),
-		"GITHUB_TOKEN":    github,
-		"GITLAB_TOKEN":    gitlab,
+		"JWT_SECRET":         jwt,
+		"PASSWORD_PEPPER":    pepper,
+		"DB_PATH":            dbPath,
+		"WORKERS":            strconv.Itoa(workerCount),
+		"GITHUB_TOKEN":       github,
+		"GITLAB_URL":         gitlabURL,
+		"GITLAB_TOKEN":       gitlabToken,
+		"GITEA_URL":          giteaURL,
+		"GITEA_TOKEN":        giteaToken,
+		"EXPORT_DESTINATION": exportDest,
 	}
 
 	err := godotenv.Write(env, path)

@@ -8,6 +8,8 @@ RUN go mod download
 
 COPY . .
 
+RUN mkdir -p cmd/gitpatrol/build && touch cmd/gitpatrol/build/.gitkeep
+
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/gitpatrol
 
 FROM alpine:latest

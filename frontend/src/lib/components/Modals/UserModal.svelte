@@ -10,12 +10,18 @@
   let confirmPassword = $state('');
 
   let githubToken = $state('');
+  let gitlabURL = $state('');
   let gitlabToken = $state('');
+  let giteaURL = $state('');
+  let giteaToken = $state('');
+  let exportDestination = $state('');
+
   let hasGithubToken = $state(false);
   let hasGitlabToken = $state(false);
+  let hasGiteaToken = $state(false);
 
   async function updateProfile() {
-    if (githubToken || gitlabToken) {
+    if (githubToken || gitlabURL || gitlabToken || giteaURL || giteaToken || exportDestination) {
       updateSettings();
     }
 
@@ -52,16 +58,22 @@
     const settings = await api.settings.getSettings();
     if (settings) {
       hasGithubToken = settings.github_token_set;
+      gitlabURL = settings.gitlab_url;
       hasGitlabToken = settings.gitlab_token_set;
+      giteaURL = settings.gitea_url;
+      hasGiteaToken = settings.gitea_token_set;
+      exportDestination = settings.export_destination;
     }
   }
 
   async function updateSettings() {
-    const res = await api.settings.setSettings(githubToken, gitlabToken);
+    const res = await api.settings.setSettings(githubToken, gitlabURL, gitlabToken, giteaURL, giteaToken, exportDestination);
     if (res) {
-      toastHandler.showToast('Token saved', 'success');
+      toastHandler.showToast('Settings saved', 'success');
+      githubToken = ''; gitlabToken = ''; giteaToken = ''; // Clear secret fields after save
+      fetchSettings();
     } else {
-      toastHandler.showToast('Token not saved, try again', 'error');
+      toastHandler.showToast('Settings not saved, try again', 'error');
     }
   }
 
@@ -87,10 +99,26 @@
       </div>
 
       <div style="border-top: 1px solid var(--glass-border); margin: 32px 0; padding-top: 32px;">
-        <label for='github'>Github Token</label>
+        <label for='vault'>PRIMARY RECOVERY VAULT</label>
+        <select id='vault' bind:value={exportDestination} style="width: 100%; margin-bottom: 24px;">
+          <option value="">NONE CONFIGURED</option>
+          <option value="github">GITHUB VAULT</option>
+          <option value="gitlab">GITLAB VAULT</option>
+          <option value="gitea">GITEA RECOVERY</option>
+        </select>
+        {#if exportDestination === 'gitlab'}
+          <label for='gitlab_url'>GITLAB URL</label>
+          <input id='gitlab_url' type='text' bind:value={gitlabURL} placeholder="https://gitlab.com" />
+        {:else if exportDestination === 'gitea'}
+          <label for='gitea_url'>GITEA URL</label>
+          <input id='gitea_url' type='text' bind:value={giteaURL} placeholder="https://gitea.example.com" />
+        {/if}
+        <label for='github'>GITHUB TOKEN</label>
         <input id='github' type='text' bind:value={githubToken} placeholder={ hasGithubToken ? '*****************************************************************************' : 'Secret github token'} />
-        <label for='gitlab'>Gitlab Token</label>
-        <input id='gitlab' type='text' bind:value={gitlabToken} placeholder={ hasGitlabToken ? '*****************************************************************************' : 'Secret github token'} />
+        <label for='gitlab'>GITLAB TOKEN</label>
+        <input id='gitlab' type='text' bind:value={gitlabToken} placeholder={ hasGitlabToken ? '*****************************************************************************' : 'Secret gitlab token'} />
+        <label for='gitea_token'>GITEA TOKEN</label>
+        <input id='gitea_token' type='text' bind:value={giteaToken} placeholder={ hasGiteaToken ? '*****************************************************************************' : 'Secret gitea token'} />
       </div>
 
       <div style="display: flex; gap: 16px;">
