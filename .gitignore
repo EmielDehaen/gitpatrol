@@ -19,6 +19,8 @@ backend/db/
 backend/data/
 backend/avatars/
 backend/server.log
+backend/cmd/gitpatrol/build/
+backend/cmd/gitpatrol/gitpatrol
 
 # Frontend specific
 frontend/node_modules/
