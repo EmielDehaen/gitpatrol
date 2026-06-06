@@ -625,3 +625,51 @@ button {
     transform: translateX(-50%) scale(1);
   }
 }
+
+/* Markdown Alerts */
+.markdown-alert {
+  padding: 16px 24px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  border-left: 4px solid var(--efinity-blue);
+  background: rgba(255, 255, 255, 0.02);
+
+  .markdown-alert-title {
+    display: flex;
+    align-items: center;
+    margin: 0 0 8px 0;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: var(--efinity-blue);
+  }
+
+  .markdown-alert-content {
+    font-size: 0.95rem;
+    color: #ccc;
+    
+    p:last-child { margin-bottom: 0; }
+  }
+
+  &.markdown-alert-tip {
+    border-left-color: var(--status-green);
+    .markdown-alert-title { color: var(--status-green); }
+    background: rgba(0, 255, 136, 0.03);
+  }
+  &.markdown-alert-warning {
+    border-left-color: var(--status-yellow);
+    .markdown-alert-title { color: var(--status-yellow); }
+    background: rgba(255, 204, 0, 0.03);
+  }
+  &.markdown-alert-important {
+    border-left-color: #a371f7;
+    .markdown-alert-title { color: #a371f7; }
+    background: rgba(163, 113, 247, 0.03);
+  }
+  &.markdown-alert-caution {
+    border-left-color: var(--status-red);
+    .markdown-alert-title { color: var(--status-red); }
+    background: rgba(255, 77, 77, 0.03);
+  }
+}
