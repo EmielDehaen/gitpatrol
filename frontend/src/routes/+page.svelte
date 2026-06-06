@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
-  import { api, API_URL } from '$lib/api.svelte';
+  import { api, API_URL, toastHandler } from '$lib/api.svelte';
   import { getProgress } from '$lib/utils';
   import { type Repository } from '$lib/types';
 
@@ -32,6 +32,15 @@
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'status_update') {
+            const repos = $state.snapshot(api.repositories);
+            const repo = repos.find(r => r.id === Number(data.id));
+            if (repo) {
+              if (data.status === 'synced') {
+                toastHandler.showToast(`Sync completed for ${repo.name}`, 'success');
+              } else if (data.status === 'error') {
+                toastHandler.showToast(`Sync failed for ${repo.name}: ${data.error}`, 'error');
+              }
+            }
             api.fetchRepos();
             api.fetchIncidents();
           } else if (data.type === 'health_update') {

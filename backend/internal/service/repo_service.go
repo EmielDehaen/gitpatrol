@@ -51,12 +51,25 @@ func (s *RepoService) SyncRepo(id int, url, name string) {
 		}
 	}
 
+	// Load existing metadata to avoid overwriting with zeros if fetch fails
+	var existingStars, existingForks, existingIssues int
+	s.db.QueryRow("SELECT stars, forks, open_issues FROM repositories WHERE id = ?", id).Scan(&existingStars, &existingForks, &existingIssues)
+
 	src, err := source.GetSource(url, s.cfg.GithubToken, s.cfg.GitlabToken)
 	var meta models.Metadata
+	meta.Stars = existingStars
+	meta.Forks = existingForks
+	meta.OpenIssues = existingIssues
+
 	if err == nil {
-		meta, _ = src.GetMetadata(url)
-		if meta.Username != "" {
-			s.downloadAvatar(meta.AvatarURL, meta.Username)
+		newMeta, fetchErr := src.GetMetadata(url)
+		if fetchErr == nil {
+			meta = newMeta
+			if meta.Username != "" {
+				s.downloadAvatar(meta.AvatarURL, meta.Username)
+			}
+		} else {
+			log.Printf("[SYNC] Failed to fetch metadata for %s: %v", url, fetchErr)
 		}
 
 		if wikiURL, exists := src.GetWikiURL(url); exists {

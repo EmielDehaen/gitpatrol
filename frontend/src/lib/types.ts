@@ -19,7 +19,7 @@ export interface Repository {
 
 export interface Incident {
   id: number;
-  repo_id: number;
+  repo_id: number | null;
   repo_name: string;
   message: string;
   created_at: string;

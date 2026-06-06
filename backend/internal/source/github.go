@@ -31,17 +31,40 @@ func (s *GitHubSource) get(url string) (*http.Response, error) {
 	return http.DefaultClient.Do(req)
 }
 
+func (s *GitHubSource) parseURL(rawURL string) (string, string, error) {
+	rawURL = strings.TrimSuffix(rawURL, "/")
+	rawURL = strings.TrimSuffix(rawURL, ".git")
+
+	var path string
+	if strings.Contains(rawURL, ":") && strings.HasPrefix(rawURL, "git@") {
+		parts := strings.Split(rawURL, ":")
+		path = parts[len(parts)-1]
+	} else {
+		parts := strings.Split(rawURL, "/")
+		if len(parts) >= 2 {
+			path = parts[len(parts)-2] + "/" + parts[len(parts)-1]
+		}
+	}
+
+	if path != "" {
+		parts := strings.Split(path, "/")
+		if len(parts) >= 2 {
+			return path, parts[0], nil
+		}
+	}
+
+	return "", "", fmt.Errorf("invalid GitHub URL: %s", rawURL)
+}
+
 func (s *GitHubSource) GetMetadata(url string) (models.Metadata, error) {
 	if time.Now().Before(githubRateLimitUntil) {
 		return models.Metadata{}, fmt.Errorf("GitHub API rate limit active, skipping metadata")
 	}
 
-	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
-	if len(parts) < 2 {
-		return models.Metadata{}, fmt.Errorf("invalid URL")
+	repoPath, username, err := s.parseURL(url)
+	if err != nil {
+		return models.Metadata{}, err
 	}
-	repoPath := parts[len(parts)-2] + "/" + parts[len(parts)-1]
-	username := parts[len(parts)-2]
 
 	resp, err := s.get(fmt.Sprintf("https://api.github.com/repos/%s", repoPath))
 	if err != nil {
@@ -56,7 +79,7 @@ func (s *GitHubSource) GetMetadata(url string) (models.Metadata, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		return models.Metadata{}, fmt.Errorf("GitHub API returned %d", resp.StatusCode)
+		return models.Metadata{}, fmt.Errorf("GitHub API returned %d for %s", resp.StatusCode, repoPath)
 	}
 
 	var meta struct {
@@ -86,11 +109,10 @@ func (s *GitHubSource) SyncIssues(url string, destPath string) error {
 		return nil
 	}
 
-	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
-	if len(parts) < 2 {
-		return fmt.Errorf("invalid URL")
+	repoPath, _, err := s.parseURL(url)
+	if err != nil {
+		return err
 	}
-	repoPath := parts[len(parts)-2] + "/" + parts[len(parts)-1]
 
 	resp, err := s.get(fmt.Sprintf("https://api.github.com/repos/%s/issues?state=all&per_page=100", repoPath))
 	if err != nil {
@@ -123,11 +145,10 @@ func (s *GitHubSource) SyncReleases(url string, destPath string) error {
 		return nil
 	}
 
-	parts := strings.Split(strings.TrimSuffix(url, ".git"), "/")
-	if len(parts) < 2 {
-		return fmt.Errorf("invalid URL")
+	repoPath, _, err := s.parseURL(url)
+	if err != nil {
+		return err
 	}
-	repoPath := parts[len(parts)-2] + "/" + parts[len(parts)-1]
 
 	resp, err := s.get(fmt.Sprintf("https://api.github.com/repos/%s/releases?per_page=100", repoPath))
 	if err != nil {

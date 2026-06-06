@@ -32,11 +32,36 @@ func (s *GitLabSource) get(apiURL string) (*http.Response, error) {
 	return http.DefaultClient.Do(req)
 }
 
+func (s *GitLabSource) parseURL(rawURL string) (string, error) {
+	rawURL = strings.TrimSuffix(rawURL, "/")
+	rawURL = strings.TrimSuffix(rawURL, ".git")
+
+	if strings.Contains(rawURL, ":") && strings.HasPrefix(rawURL, "git@") {
+		parts := strings.Split(rawURL, ":")
+		return parts[len(parts)-1], nil
+	}
+
+	if strings.HasPrefix(rawURL, "http") {
+		u, err := url.Parse(rawURL)
+		if err == nil {
+			return strings.TrimPrefix(u.Path, "/"), nil
+		}
+	}
+
+	parts := strings.Split(rawURL, "/")
+	if len(parts) >= 2 {
+		return parts[len(parts)-2] + "/" + parts[len(parts)-1], nil
+	}
+
+	return "", fmt.Errorf("invalid GitLab URL: %s", rawURL)
+}
+
 func (s *GitLabSource) encodedPath(repoURL string) string {
-	parts := strings.Split(strings.TrimSuffix(repoURL, ".git"), "/")
-	namespace := parts[len(parts)-2]
-	project := parts[len(parts)-1]
-	return url.PathEscape(namespace + "/" + project)
+	path, err := s.parseURL(repoURL)
+	if err != nil {
+		return ""
+	}
+	return url.PathEscape(path)
 }
 
 func (s *GitLabSource) GetMetadata(repoURL string) (models.Metadata, error) {
@@ -44,12 +69,12 @@ func (s *GitLabSource) GetMetadata(repoURL string) (models.Metadata, error) {
 		return models.Metadata{}, fmt.Errorf("GitLab API rate limit active, skipping metadata")
 	}
 
-	parts := strings.Split(strings.TrimSuffix(repoURL, ".git"), "/")
-	if len(parts) < 2 {
+	encPath := s.encodedPath(repoURL)
+	if encPath == "" {
 		return models.Metadata{}, fmt.Errorf("invalid URL")
 	}
 
-	resp, err := s.get(fmt.Sprintf("https://gitlab.com/api/v4/projects/%s", s.encodedPath(repoURL)))
+	resp, err := s.get(fmt.Sprintf("https://gitlab.com/api/v4/projects/%s", encPath))
 	if err != nil {
 		return models.Metadata{}, err
 	}
@@ -62,7 +87,7 @@ func (s *GitLabSource) GetMetadata(repoURL string) (models.Metadata, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		return models.Metadata{}, fmt.Errorf("GitLab API returned %d", resp.StatusCode)
+		return models.Metadata{}, fmt.Errorf("GitLab API returned %d for %s", resp.StatusCode, repoURL)
 	}
 
 	var meta struct {
@@ -96,7 +121,12 @@ func (s *GitLabSource) SyncIssues(repoURL string, destPath string) error {
 		return nil
 	}
 
-	resp, err := s.get(fmt.Sprintf("https://gitlab.com/api/v4/projects/%s/issues?state=all&per_page=100", s.encodedPath(repoURL)))
+	encPath := s.encodedPath(repoURL)
+	if encPath == "" {
+		return fmt.Errorf("invalid URL")
+	}
+
+	resp, err := s.get(fmt.Sprintf("https://gitlab.com/api/v4/projects/%s/issues?state=all&per_page=100", encPath))
 	if err != nil {
 		return err
 	}
@@ -127,7 +157,12 @@ func (s *GitLabSource) SyncReleases(repoURL string, destPath string) error {
 		return nil
 	}
 
-	resp, err := s.get(fmt.Sprintf("https://gitlab.com/api/v4/projects/%s/releases?per_page=100", s.encodedPath(repoURL)))
+	encPath := s.encodedPath(repoURL)
+	if encPath == "" {
+		return fmt.Errorf("invalid URL")
+	}
+
+	resp, err := s.get(fmt.Sprintf("https://gitlab.com/api/v4/projects/%s/releases?per_page=100", encPath))
 	if err != nil {
 		return err
 	}
