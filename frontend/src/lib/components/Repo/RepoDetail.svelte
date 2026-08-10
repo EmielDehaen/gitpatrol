@@ -1,45 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { marked } from 'marked';
-  
-  // Custom extension for GitHub Alerts ([!TIP], [!NOTE], etc.)
-  marked.use({
-    extensions: [{
-      name: 'alert',
-      level: 'block',
-      start(src) { return src.match(/^> \[!/)?.index; },
-      tokenizer(src) {
-        const rule = /^> \[!(TIP|NOTE|IMPORTANT|WARNING|CAUTION)\][ \t]*\n((?:> .*(?:\n|$))*)/;
-        const match = rule.exec(src);
-        if (match) {
-          return {
-            type: 'alert',
-            raw: match[0],
-            alertType: match[1].toLowerCase(),
-            text: match[2].replace(/^> /gm, '').trim()
-          };
-        }
-      },
-      renderer(token) {
-        const icons = {
-          tip: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A5 5 0 0 0 8 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
-          note: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
-          warning: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-          important: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-          caution: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
-        };
-        return `<div class="markdown-alert markdown-alert-${token.alertType}">
-          <p class="markdown-alert-title">${icons[token.alertType] || icons.note}${token.alertType.toUpperCase()}</p>
-          <div class="markdown-alert-content">${marked.parse(token.text)}</div>
-        </div>`;
-      }
-    }]
-  });
+  import { parseMarkdown } from '$lib/markdown';
 
   import { type Repository, type Commit } from '$lib/types';
   import { API_URL, api, apiFetch, toastHandler } from '$lib/api.svelte';
   import { fade } from 'svelte/transition';
   import { getAvatarUrl, getRemainingTime, handleAvatarError, minutesToHuman } from '$lib/utils';
+  import RepoReadme from './RepoReadme.svelte';
+  import RepoIssues from './RepoIssues.svelte';
+  import RepoReleases from './RepoReleases.svelte';
+  import RepoWiki from './RepoWiki.svelte';
+  import RepoLogs from './RepoLogs.svelte';
 
   let { repo = $bindable(), selectedRepo = $bindable(), showConfigModal = $bindable() } = $props<{ repo: Repository | null, selectedRepo: Repository | null, showConfigModal: boolean }>();
 
@@ -48,7 +19,6 @@
   let wikiContent = $state('');
   let issues = $state<any[]>([]);
   let releases = $state<any[]>([]);
-  let readmeExpanded = $state(false);
   let now = $state(Date.now());
   let exportDestination = $state('');
 
@@ -77,7 +47,7 @@
 
       const wikiRes = await apiFetch(`${assetBase}wiki/Home.md`);
       if (wikiRes.ok) {
-        wikiContent = await marked.parse(await wikiRes.text());
+        wikiContent = await parseMarkdown(await wikiRes.text());
       } else {
         wikiContent = '<p style="color: var(--efinity-text-muted)">No documentation (Wiki) found for this asset.</p>';
       }
@@ -87,7 +57,6 @@
   async function fetchReadme() {
     if (!repo) return;
     readmeContent = 'Loading mission briefing...';
-    readmeExpanded = false;
     try {
       const res = await apiFetch(`/api/repositories/${repo.id}/readme`);
       if (res.ok) {
@@ -99,7 +68,7 @@
         text = text.replace(/<source([^>]*?)srcset=["'](?!(?:http|https|ftp))(?:\.\/)?([^"']+)["']/gi, (match, pre, path) => `<source${pre}srcset="${assetBase}${path}"`);
         text = text.replace(/\[([^\]]*)\]\((?!(?:http|https|ftp|#))(?:\.\/)?([^)]+)\)/gi, `[$1](${assetBase}$2)`);
 
-        readmeContent = await marked.parse(text, { gfm: true, breaks: true });
+        readmeContent = await parseMarkdown(text);
       } else {
         readmeContent = '<p style="color: var(--efinity-text-muted)">No mission briefing available for this asset.</p>';
       }
@@ -219,66 +188,15 @@
         </div>
 
         {#if activeTab === 'readme'}
-          <div class="readme-container" class:readme-expanded={readmeExpanded}>
-            <div class="readme-content">
-              {@html readmeContent}
-            </div>
-            {#if !readmeExpanded}
-              <div class="readme-fade">
-                <button class="secondary" style="font-size: 0.65rem; padding: 12px 24px;" onclick={() => readmeExpanded = true}>READ FULL MISSION BRIEFING</button>
-              </div>
-            {/if}
-          </div>
+          <RepoReadme {readmeContent} />
         {:else if activeTab === 'issues'}
-          <div style="display: flex; flex-direction: column; gap: 16px;">
-            {#each issues as issue}
-              <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px; opacity: {issue.state === 'closed' ? 0.6 : 1}">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                  <div style="font-weight: 700; font-size: 1.1rem; color: #fff;">{issue.title}</div>
-                  <span class="badge" style="color: {issue.state === 'open' ? 'var(--status-green)' : 'var(--efinity-text-muted)'}; background: {issue.state === 'open' ? 'rgba(0, 255, 136, 0.05)' : 'rgba(255,255,255,0.03)'}">{issue.state.toUpperCase()}</span>
-                </div>
-                <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">#{issue.number} opened by {issue.user?.login} • {new Date(issue.created_at).toLocaleDateString()}</div>
-              </div>
-            {:else}
-              <p style="color: var(--efinity-text-muted); text-align: center; padding: 40px;">No tactical issues found in this sector.</p>
-            {/each}
-          </div>
+          <RepoIssues {issues} />
         {:else if activeTab === 'releases'}
-          <div style="display: flex; flex-direction: column; gap: 24px;">
-            {#each releases as release}
-              <div style="background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid var(--glass-border); padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--glass-border); padding-bottom: 16px;">
-                  <div>
-                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--efinity-blue);">{release.tag_name}</div>
-                    <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">{release.name || ''} • {new Date(release.published_at).toLocaleDateString()}</div>
-                  </div>
-                </div>
-                <div class="readme-content" style="font-size: 0.9rem;">{@html marked.parse(release.body || '')}</div>
-              </div>
-            {:else}
-              <p style="color: var(--efinity-text-muted); text-align: center; padding: 40px;">No historical chronicles (releases) found.</p>
-            {/each}
-          </div>
+          <RepoReleases {releases} />
         {:else if activeTab === 'wiki'}
-          <div class="readme-container readme-expanded">
-            <div class="readme-content">
-              {@html wikiContent}
-            </div>
-          </div>
+          <RepoWiki {wikiContent} />
         {:else if activeTab === 'logs'}
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            {#each parseCommits(repo?.last_commit || '') as commit}
-              <div style="background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                  {#if commit.branch}<span class="branch-badge">{commit.branch}</span>{/if}
-                  <span style="font-weight: 600; font-size: 1rem;">{commit.message}</span>
-                </div>
-                <div style="font-size: 0.8rem; color: var(--efinity-text-muted); font-weight: 500;">
-                  {commit.author} • {commit.date} • <span style="color: var(--efinity-blue); font-family: monospace;">{commit.hash.substring(0,7)}</span>
-                </div>
-              </div>
-            {/each}
-          </div>
+          <RepoLogs commits={parseCommits(repo?.last_commit || '')} />
         {/if}
       </div>
     </div>
