@@ -16,6 +16,7 @@
   import ConfigModal from '$lib/components/Modals/ConfigModal.svelte';
   import IncidentModal from '$lib/components/Modals/IncidentModal.svelte';
   import UserModal from '$lib/components/Modals/UserModal.svelte';
+  import Icon from '$lib/components/Icon.svelte';
 
   let viewMode = $state<'grid' | 'list'>('grid');
   let selectedRepo = $state<Repository | null>(null);
@@ -99,7 +100,7 @@
 
     <div class="fab" data-tooltip="Deploy New Patrol">
       <button onclick={() => showAddModal = true} aria-label="Deploy New Patrol">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <Icon name="plus" size={28} stroke="white" strokeWidth={3} />
       </button>
     </div>
   </div>

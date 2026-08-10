@@ -1,6 +1,7 @@
 <script lang="ts">
   import { api } from '$lib/api.svelte';
   import { fade } from 'svelte/transition';
+  import Icon from '$lib/components/Icon.svelte';
 
   let { show = $bindable() } = $props();
 
@@ -33,7 +34,7 @@
       {:else}
         <div style="text-align: center; padding: 80px 40px;">
           <div style="color: var(--status-green); margin-bottom: 24px;">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <Icon name="check-circle" size={48} strokeWidth={2} />
           </div>
           <h3 style="font-size: 1.5rem; margin-bottom: 8px;">No Alerts Detected</h3>
           <p style="color: var(--efinity-text-muted);">All assets are operating within normal parameters.</p>
