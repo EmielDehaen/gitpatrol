@@ -1,5 +1,8 @@
 <script lang="ts">
   import { authStore } from '$lib/auth.svelte';
+  import { reposStore } from '$lib/repos.svelte';
+  import { incidentsStore } from '$lib/incidents.svelte';
+  import { healthStore } from '$lib/health.svelte';
   import { fade } from 'svelte/transition';
 
   let username = $state('');
@@ -12,6 +15,10 @@
     if (success) {
       username = '';
       password = '';
+      reposStore.fetchRepos();
+      incidentsStore.fetchIncidents();
+      healthStore.fetchHealth();
+      healthStore.setupHealthPolling();
     }
     loading = false;
   }
