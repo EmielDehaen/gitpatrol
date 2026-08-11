@@ -19,7 +19,7 @@ export class SettingsAPI {
         gitea_token_set: false,
         export_destination: '',
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       toastHandler.showToast('Failed to get settings', 'error');
       return {
         github_token_set: false,
@@ -48,7 +48,7 @@ export class SettingsAPI {
       });
 
       return res.ok;
-    } catch (e: any) {
+    } catch (e: unknown) {
       return false;
     }
   }

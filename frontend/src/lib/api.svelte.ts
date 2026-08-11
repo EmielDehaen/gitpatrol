@@ -27,6 +27,8 @@ class ToastHandler {
   private toastId = 0
 
   showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
+    // Deduplicate: don't show the same message+type if it's already visible
+    if (this.toasts.some(t => t.message === message && t.type === type)) return;
     const id = this.toastId++;
     this.toasts = [...this.toasts, { id, message, type }];
     setTimeout(() => {
@@ -131,7 +133,9 @@ class GitPatrolAPI {
       if (res.ok) {
         this.repositories = await res.json();
       }
-    } catch (e) { }
+    } catch (e) {
+      toastHandler.showToast('Network error: could not load repositories.', 'error');
+    }
   }
 
   async fetchIncidents() {
@@ -140,7 +144,9 @@ class GitPatrolAPI {
       if (res.ok) {
         this.incidents = await res.json();
       }
-    } catch (e) { }
+    } catch (e) {
+      toastHandler.showToast('Network error: could not load incidents.', 'error');
+    }
   }
 
   async clearIncidents() {
@@ -150,7 +156,9 @@ class GitPatrolAPI {
         this.incidents = [];
         toastHandler.showToast('All incidents cleared.', 'info');
       }
-    } catch (e) { }
+    } catch (e) {
+      toastHandler.showToast('Network error: could not clear incidents.', 'error');
+    }
   }
 }
 

@@ -52,7 +52,9 @@
       } else {
         wikiContent = '<p style="color: var(--efinity-text-muted)">No documentation (Wiki) found for this asset.</p>';
       }
-    } catch (e) {}
+    } catch (e) {
+      toastHandler.showToast('Network error: could not load asset metadata.', 'error');
+    }
   }
 
   async function fetchReadme() {
@@ -74,7 +76,9 @@
         readmeContent = '<p style="color: var(--efinity-text-muted)">No mission briefing available for this asset.</p>';
       }
       fetchMetadata();
-    } catch (e) {}
+    } catch (e) {
+      readmeContent = '<p style="color: var(--efinity-text-muted)">Failed to load mission briefing. Check your connection.</p>';
+    }
   }
 
   function parseCommits(lastCommit: string): Commit[] {
@@ -98,7 +102,9 @@
     try {
       await apiFetch(`/api/repositories/${repo.id}/sync`, { method: 'POST' });
       toastHandler.showToast('Sync initiated.', 'info');
-    } catch (e) {}
+    } catch (e) {
+      toastHandler.showToast('Network error: could not initiate sync.', 'error');
+    }
   }
 
   async function exportRepo() {
