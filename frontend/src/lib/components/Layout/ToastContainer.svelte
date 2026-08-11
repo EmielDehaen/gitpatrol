@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { toastHandler } from '$lib/api.svelte';
+  import { toastHandler } from '$lib/toast.svelte';
   import { fade, fly } from 'svelte/transition';
   import Icon from '$lib/components/Icon.svelte';
 </script>

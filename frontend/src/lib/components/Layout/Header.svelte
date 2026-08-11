@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { api } from '$lib/api.svelte';
+  import { authStore } from '$lib/auth.svelte';
+  import { healthStore } from '$lib/health.svelte';
+  import { incidentsStore } from '$lib/incidents.svelte';
   import Icon from '$lib/components/Icon.svelte';
 
   let { viewMode = $bindable(), showIncidentModal = $bindable(), showUserModal = $bindable() } = $props();
@@ -17,30 +19,30 @@
     </div>
     <button 
       class="notification-bell" 
-      class:has-incidents={api.incidents.length > 0} 
+      class:has-incidents={incidentsStore.incidents.length > 0} 
       onclick={() => showIncidentModal = true} 
       data-tooltip="Security Logs"
     >
       <Icon name="bell" />
-      {#if api.incidents.length > 0}
-        <div class="bell-count">{api.incidents.length}</div>
+      {#if incidentsStore.incidents.length > 0}
+        <div class="bell-count">{incidentsStore.incidents.length}</div>
       {/if}
     </button>
     <div 
-      class="badge status-{api.healthStatus?.status || 'offline'}" 
-      data-tooltip={api.healthStatus ? `Internet: ${api.healthStatus.checks.internet.connected ? 'OK' : 'OFF'} | Disk: ${api.healthStatus.checks.disk.used_percent}` : 'Checking...'}
+      class="badge status-{healthStore.healthStatus?.status || 'offline'}" 
+      data-tooltip={healthStore.healthStatus ? `Internet: ${healthStore.healthStatus.checks.internet.connected ? 'OK' : 'OFF'} | Disk: ${healthStore.healthStatus.checks.disk.used_percent}` : 'Checking...'}
     >
       <span class="dot"></span>
-      {api.healthStatus ? (api.healthStatus.status === 'healthy' ? 'SYSTEM ONLINE' : api.healthStatus.status.toUpperCase()) : 'OFFLINE'}
+      {healthStore.healthStatus ? (healthStore.healthStatus.status === 'healthy' ? 'SYSTEM ONLINE' : healthStore.healthStatus.status.toUpperCase()) : 'OFFLINE'}
     </div>
     <div class="user-profile" onclick={() => showUserModal = true} data-tooltip="User Settings" role='button' onkeypress={() => {}} tabindex=0>
-      <div class="avatar-circle">{api.user?.username ? api.user.username.charAt(0) : 'U'}</div>
+      <div class="avatar-circle">{authStore.user?.username ? authStore.user.username.charAt(0) : 'U'}</div>
       <div class="user-info">
-        <span class="user-name">{api.user?.username}</span>
+        <span class="user-name">{authStore.user?.username || 'Operator'}</span>
         <span class="user-role">Administrator</span>
       </div>
     </div>
-    <button class="notification-bell logout-btn" onclick={() => api.handleLogout()} data-tooltip="Logout" aria-label='logout'>
+    <button onclick={() => authStore.handleLogout()} class="icon-btn" title="Logout" aria-label='logout'>
       <Icon name="power" />
     </button>
   </div>

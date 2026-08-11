@@ -1,4 +1,4 @@
-import { API_URL } from '$lib/api.svelte';
+import { API_URL } from '$lib/client';
 import type { Repository } from '$lib/types';
 
 export function getNormalizedUrl(url: string) {

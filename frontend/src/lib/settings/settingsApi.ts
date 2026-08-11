@@ -1,4 +1,5 @@
-import { apiFetch, toastHandler } from "$lib/api.svelte";
+import { apiFetch } from "$lib/client";
+import { toastHandler } from "$lib/toast.svelte";
 import { endpoint } from "./endpoints";
 import type { Settings } from "./types";
 
@@ -53,3 +54,5 @@ export class SettingsAPI {
     }
   }
 }
+
+export const settingsApi = new SettingsAPI();

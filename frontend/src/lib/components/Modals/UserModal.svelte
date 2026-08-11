@@ -1,10 +1,13 @@
 <script lang="ts">
-  import { api, apiFetch, toastHandler } from '$lib/api.svelte';
+  import { apiFetch } from '$lib/client';
+  import { toastHandler } from '$lib/toast.svelte';
+  import { settingsApi } from '$lib/settings/settingsApi';
+  import { authStore } from '$lib/auth.svelte';
   import { fade } from 'svelte/transition';
 
   let { show = $bindable() } = $props();
 
-  let editUsername = $state(api.user?.username || '');
+  let editUsername = $state(authStore.user?.username || '');
   let oldPassword = $state('');
   let newPassword = $state('');
   let confirmPassword = $state('');
@@ -47,7 +50,7 @@
       toastHandler.showToast('Profile updated.', 'success');
       show = false;
       oldPassword = ''; newPassword = ''; confirmPassword = '';
-      api.checkAuth();
+      authStore.checkAuth();
     } else {
       const data = await res.json();
       toastHandler.showToast(data.error || 'Update failed.', 'error');
@@ -55,7 +58,7 @@
   }
 
   async function fetchSettings() {
-    const settings = await api.settings.getSettings();
+    const settings = await settingsApi.getSettings();
     if (settings) {
       hasGithubToken = settings.github_token_set;
       gitlabURL = settings.gitlab_url;
@@ -67,7 +70,7 @@
   }
 
   async function updateSettings() {
-    const res = await api.settings.setSettings(githubToken, gitlabURL, gitlabToken, giteaURL, giteaToken, exportDestination);
+    const res = await settingsApi.setSettings(githubToken, gitlabURL, gitlabToken, giteaURL, giteaToken, exportDestination);
     if (res) {
       toastHandler.showToast('Settings saved', 'success');
       githubToken = ''; gitlabToken = ''; giteaToken = ''; // Clear secret fields after save
