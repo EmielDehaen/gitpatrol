@@ -3,13 +3,13 @@
   import { incidentsStore } from '$lib/incidents.svelte';
   import Icon from '$lib/components/Icon.svelte';
 
-  let { viewMode = $bindable(), showIncidentModal = $bindable() } = $props();
+  let { viewMode = $bindable(), showIncidentModal = $bindable(), searchQuery = $bindable() } = $props();
 </script>
 
 <header class="top-bar">
   <div class="search-bar">
     <Icon name="activity" />
-    <input type="text" placeholder="Search clusters..." disabled />
+    <input type="text" placeholder="Search clusters..." bind:value={searchQuery} />
   </div>
 
   <div class="top-bar-actions">

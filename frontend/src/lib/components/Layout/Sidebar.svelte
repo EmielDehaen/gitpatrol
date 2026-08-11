@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { page } from '$app/stores';
   import Icon from '$lib/components/Icon.svelte';
   import { authStore } from '$lib/auth.svelte';
 
-  export let activePath = '/';
+  let { showUserModal = $bindable() } = $props();
 </script>
 
 <aside class="sidebar">
@@ -15,30 +16,30 @@
   </div>
 
   <nav class="sidebar-nav">
-    <a href="/" class="nav-item" class:active={activePath === '/'}>
+    <a href="/" class="nav-item" class:active={$page.url.pathname === '/'}>
       <Icon name="grid" />
       <span>Overview</span>
     </a>
-    <a href="/" class="nav-item">
+    <a href="/repositories" class="nav-item" class:active={$page.url.pathname.startsWith('/repositories')}>
       <Icon name="folder" />
       <span>Repositories</span>
     </a>
-    <a href="/" class="nav-item">
+    <a href="/mirroring" class="nav-item" class:active={$page.url.pathname.startsWith('/mirroring')}>
       <Icon name="git-merge" />
       <span>Mirroring</span>
     </a>
-    <a href="/" class="nav-item">
+    <a href="/health" class="nav-item" class:active={$page.url.pathname.startsWith('/health')}>
       <Icon name="activity" />
       <span>Health</span>
     </a>
-    <a href="/" class="nav-item">
+    <a href="/settings" class="nav-item" class:active={$page.url.pathname.startsWith('/settings')}>
       <Icon name="settings" />
       <span>Settings</span>
     </a>
   </nav>
 
   <div class="sidebar-footer">
-    <div class="user-card" onclick={() => {}} role="button" tabindex=0 onkeypress={() => {}}>
+    <div class="user-card" onclick={() => showUserModal = true} role="button" tabindex=0 onkeypress={(e) => e.key === 'Enter' && (showUserModal = true)}>
       <div class="avatar-circle">{authStore.user?.username ? authStore.user.username.charAt(0) : 'U'}</div>
       <div class="user-info">
         <span class="user-name">{authStore.user?.username || 'Operator'}</span>
