@@ -1,7 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
-  import { api, API_URL, toastHandler } from '$lib/api.svelte';
+  import { API_URL } from '$lib/client';
+  import { toastHandler } from '$lib/toast.svelte';
+  import { authStore } from '$lib/auth.svelte';
+  import { reposStore } from '$lib/repos.svelte';
+  import { incidentsStore } from '$lib/incidents.svelte';
+  import { healthStore } from '$lib/health.svelte';
   import { getProgress } from '$lib/utils';
   import { type Repository } from '$lib/types';
 
@@ -30,11 +35,11 @@
     const wsUrl = wsBaseUrl + '/ws';
     const ws = new WebSocket(wsUrl);
     ws.onmessage = (event) => {
-      if (api.isAuthenticated) {
+      if (authStore.isAuthenticated) {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'status_update') {
-            const repos = $state.snapshot(api.repositories);
+            const repos = $state.snapshot(reposStore.repositories);
             const repo = repos.find(r => r.id === Number(data.id));
             if (repo) {
               if (data.status === 'synced') {
@@ -43,20 +48,20 @@
                 toastHandler.showToast(`Sync failed for ${repo.name}: ${data.error}`, 'error');
               }
             }
-            api.fetchRepos();
-            api.fetchIncidents();
+            reposStore.fetchRepos();
+            incidentsStore.fetchIncidents();
           } else if (data.type === 'health_update') {
-            api.healthStatus = data.health;
-            api.setupHealthPolling(); // Reset the 1-minute fallback timer
+            healthStore.healthStatus = data.health;
+            healthStore.setupHealthPolling(); // Reset the 1-minute fallback timer
           }
         } catch (e) {
-          api.fetchRepos();
-          api.fetchIncidents();
+            reposStore.fetchRepos();
+            incidentsStore.fetchIncidents();
         }
       }
     };
     const timer = setInterval(() => {
-      api.repositories = api.repositories.map(r => ({ ...r, progress: getProgress(r) }));
+      reposStore.repositories = reposStore.repositories.map(r => ({ ...r, progress: getProgress(r) }));
     }, 1000);
     return () => clearInterval(timer);
   });
@@ -64,14 +69,14 @@
 
 <ToastContainer />
 
-{#if api.authLoading}
+{#if authStore.authLoading}
   <div class="modal-overlay">
     <div style="text-align: center;">
       <h1 style="font-size: 2rem;">Authenticating...</h1>
       <p style="color: var(--efinity-text-muted); margin-top: 16px;">Verifying tactical clearance.</p>
     </div>
   </div>
-{:else if !api.isAuthenticated}
+{:else if !authStore.isAuthenticated}
   <AuthModal />
 {:else}
   <div class="container" transition:fade>
@@ -79,19 +84,19 @@
 
     {#if viewMode === 'grid'}
       <div class="repo-grid">
-        {#each api.repositories as repo (repo.id)}
+        {#each reposStore.repositories as repo (repo.id)}
           <RepoCard {repo} bind:selectedRepo />
         {/each}
       </div>
     {:else}
       <div class="repo-list">
-        {#each api.repositories as repo (repo.id)}
+        {#each reposStore.repositories as repo (repo.id)}
           <RepoListRow {repo} bind:selectedRepo />
         {/each}
       </div>
     {/if}
 
-    {#if api.repositories.length === 0}
+    {#if reposStore.repositories.length === 0}
       <div style="text-align: center; padding: 120px 40px; background: var(--glass); border-radius: 32px; border: 1px solid var(--glass-border);">
         <h2 style="font-size: 2rem; margin-bottom: 16px;">No Assets Under Patrol</h2>
         <p style="color: var(--efinity-text-muted); margin-bottom: 40px;">Deploy your first patrol to start monitoring repositories.</p>

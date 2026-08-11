@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { api } from '$lib/api.svelte';
+  import { incidentsStore } from '$lib/incidents.svelte';
   import { fade } from 'svelte/transition';
   import Icon from '$lib/components/Icon.svelte';
 
   let { show = $bindable() } = $props();
 
   async function clearAll() {
-    await api.clearIncidents();
+    await incidentsStore.clearIncidents();
     show = false;
   }
 </script>
@@ -16,11 +16,13 @@
     <div class="modal-header">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2 style="font-size: 1.5rem; margin: 0;">Tactical Incident Logs</h2>
-        <button class="secondary" onclick={clearAll} style="color: var(--status-red); border-color: rgba(255, 77, 77, 0.2);">CLEAR LOGS</button>
+        {#if incidentsStore.incidents.length > 0}
+        <button onclick={() => incidentsStore.clearIncidents()} style="background: transparent; color: var(--efinity-error); border: 1px solid var(--efinity-error);">CLEAR LOGS</button>
+        {/if}
       </div>
     </div>
     <div class="modal-body">
-      {#each api.incidents as incident}
+      {#each incidentsStore.incidents as incident (incident.id)}
         <div class="incident-item">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 12px;">

@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { api, apiFetch, toastHandler } from '$lib/api.svelte';
+  import { apiFetch } from '$lib/client';
+  import { toastHandler } from '$lib/toast.svelte';
+  import { reposStore } from '$lib/repos.svelte';
   import { suggestName, humanToMinutes, getNormalizedUrl, getAvatarUrl } from '$lib/utils';
   import { fade } from 'svelte/transition';
   import Icon from '$lib/components/Icon.svelte';
@@ -37,7 +39,7 @@
       });
       if (res.ok) {
         url = ''; name = ''; autoPatrol = true; intervalString = '1h'; show = false;
-        api.fetchRepos();
+        reposStore.fetchRepos();
         toastHandler.showToast('Patrol deployed successfully!', 'success');
       } else {
         const err = await res.json();

@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { settingsApi } from '$lib/settings/settingsApi';
   import { parseMarkdown } from '$lib/markdown';
 
   import { type Repository, type Commit, type Issue, type Release } from '$lib/types';
-  import { API_URL, api, apiFetch, toastHandler } from '$lib/api.svelte';
+  import { API_URL, apiFetch } from '$lib/client';
+  import { toastHandler } from '$lib/toast.svelte';
   import { fade } from 'svelte/transition';
   import { getAvatarUrl, getRemainingTime, handleAvatarError, minutesToHuman } from '$lib/utils';
   import RepoReadme from './RepoReadme.svelte';
@@ -24,7 +26,7 @@
   let exportDestination = $state('');
 
   async function fetchSettings() {
-    const settings = await api.settings.getSettings();
+    const settings = await settingsApi.getSettings();
     exportDestination = settings.export_destination;
   }
 

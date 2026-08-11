@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { api, apiFetch, toastHandler } from '$lib/api.svelte';
+  import { apiFetch } from '$lib/client';
+  import { toastHandler } from '$lib/toast.svelte';
+  import { reposStore } from '$lib/repos.svelte';
   import { humanToMinutes, minutesToHuman } from '$lib/utils';
   import { type Repository } from '$lib/types';
   import { fade } from 'svelte/transition';
@@ -19,8 +21,8 @@
         })
       });
       if (res.ok) { 
-        await api.fetchRepos();
-        selectedRepo = api.repositories.find(r => r.id === repo.id) || null;
+        await reposStore.fetchRepos();
+        selectedRepo = reposStore.repositories.find(r => r.id === repo.id) || null;
         show = false; 
         toastHandler.showToast('Configuration updated.', 'success');
       } else {
@@ -36,7 +38,7 @@
     try {
       const res = await apiFetch(`/api/repositories/${repo.id}`, { method: 'DELETE' });
       if (res.ok) { 
-        selectedRepo = null; show = false; api.fetchRepos(); 
+        selectedRepo = null; show = false; reposStore.fetchRepos(); 
         toastHandler.showToast('Patrol terminated.', 'info');
       }
     } catch (e) {

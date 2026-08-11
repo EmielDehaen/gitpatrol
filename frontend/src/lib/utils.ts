@@ -1,4 +1,4 @@
-import { API_URL } from '$lib/api.svelte';
+import { API_URL } from '$lib/client';
 import type { Repository } from '$lib/types';
 
 export function getNormalizedUrl(url: string) {
@@ -29,7 +29,7 @@ export function minutesToHuman(minutes: number): string {
   const d = Math.floor(minutes / 1440);
   const h = Math.floor((minutes % 1440) / 60);
   const m = minutes % 60;
-  
+
   let parts = [];
   if (d > 0) parts.push(`${d}d`);
   if (h > 0) parts.push(`${h}h`);
@@ -41,11 +41,11 @@ export function humanToMinutes(str: string): number {
   const regex = /(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?/i;
   const match = str.match(regex);
   if (!match) return 60;
-  
+
   const d = parseInt(match[1] || '0');
   const h = parseInt(match[2] || '0');
   const m = parseInt(match[3] || '0');
-  
+
   const total = (d * 1440) + (h * 60) + m;
   return total > 0 ? total : 60;
 }
@@ -82,24 +82,24 @@ export function getProgress(repo: Repository) {
 export function getRemainingTime(repo: Repository, withText: boolean = true, now: number = Date.now()) {
   if (repo.auto_patrol === 0) return 'Manual Patrol Only';
   if (!repo.last_sync || repo.status === 'syncing') return 'Syncing...';
-  
+
   const lastSync = new Date(repo.last_sync).getTime();
   const nextSync = lastSync + repo.interval_minutes * 60000;
   const remainingMs = nextSync - now;
-  
+
   if (remainingMs <= 0) return 'Syncing...';
-  
+
   const d = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
   const h = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const m = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
   const s = Math.floor((remainingMs % (1000 * 60)) / 1000);
-  
+
   let parts = [];
   if (d > 0) parts.push(`${d}d`);
   if (h > 0) parts.push(`${h}h`);
   if (m > 0) parts.push(`${m}m`);
   if (s > 0 || parts.length === 0) parts.push(`${s}s`);
-  
+
   if (withText) {
     return `Next sync in: ${parts.join(' ')}`;
   } else {
