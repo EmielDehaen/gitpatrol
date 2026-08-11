@@ -48,11 +48,7 @@ class GitPatrolAPI {
   settings = new SettingsAPI();
   private healthTimer: ReturnType<typeof setInterval> | null = null;
 
-  constructor() {
-    if (typeof window !== 'undefined') {
-      this.checkAuth();
-    }
-  }
+
 
   setupHealthPolling() {
     if (this.healthTimer) clearInterval(this.healthTimer);
