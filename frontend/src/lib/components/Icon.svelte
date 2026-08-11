@@ -12,7 +12,12 @@
     | 'refresh'
     | 'settings'
     | 'x'
-    | 'plus';
+    | 'plus'
+    | 'grid'
+    | 'folder'
+    | 'git-merge'
+    | 'activity'
+    | 'zap';
 
   let {
     name,
@@ -81,5 +86,20 @@
   {:else if name === 'plus'}
     <line x1="12" y1="5" x2="12" y2="19"></line>
     <line x1="5" y1="12" x2="19" y2="12"></line>
+  {:else if name === 'grid'}
+    <rect x="3" y="3" width="7" height="7"></rect>
+    <rect x="14" y="3" width="7" height="7"></rect>
+    <rect x="14" y="14" width="7" height="7"></rect>
+    <rect x="3" y="14" width="7" height="7"></rect>
+  {:else if name === 'folder'}
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+  {:else if name === 'git-merge'}
+    <circle cx="18" cy="18" r="3"></circle>
+    <circle cx="6" cy="6" r="3"></circle>
+    <path d="M6 21V9a9 9 0 0 0 9 9"></path>
+  {:else if name === 'activity'}
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+  {:else if name === 'zap'}
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
   {/if}
 </svg>

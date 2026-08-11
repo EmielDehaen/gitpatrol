@@ -12,6 +12,7 @@
 
   // Components
   import Header from '$lib/components/Layout/Header.svelte';
+  import Sidebar from '$lib/components/Layout/Sidebar.svelte';
   import ToastContainer from '$lib/components/Layout/ToastContainer.svelte';
   import RepoCard from '$lib/components/Repo/RepoCard.svelte';
   import RepoListRow from '$lib/components/Repo/RepoListRow.svelte';
@@ -79,35 +80,66 @@
 {:else if !authStore.isAuthenticated}
   <AuthModal />
 {:else}
-  <div class="container" transition:fade>
-    <Header bind:viewMode bind:showIncidentModal bind:showUserModal />
-
-    {#if viewMode === 'grid'}
-      <div class="repo-grid">
-        {#each reposStore.repositories as repo (repo.id)}
-          <RepoCard {repo} bind:selectedRepo />
-        {/each}
+  <div class="layout-wrapper" transition:fade>
+    <Sidebar />
+    <div class="main-content">
+      <Header bind:viewMode bind:showIncidentModal />
+      
+      <div class="hero">
+        <div class="hero-stats">
+          <div class="stat-block">
+            <span class="stat-label">GLOBAL UPTIME</span>
+            <span class="stat-value">99.998%</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-label">TOTAL PROTECTED</span>
+            <span class="stat-value">1.4TB</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-label">ACTIVE MIRRORS</span>
+            <span class="stat-value">12/12</span>
+          </div>
+        </div>
+        
+        <div class="hero-filters">
+          <div class="tab-container" style="width: auto; margin-bottom: 0;">
+            <button class="tab-btn active">ALL</button>
+            <button class="tab-btn">SYNCING</button>
+            <button class="tab-btn">SECURED</button>
+            <button class="tab-btn">FAILED</button>
+          </div>
+        </div>
       </div>
-    {:else}
-      <div class="repo-list">
-        {#each reposStore.repositories as repo (repo.id)}
-          <RepoListRow {repo} bind:selectedRepo />
-        {/each}
-      </div>
-    {/if}
 
-    {#if reposStore.repositories.length === 0}
-      <div style="text-align: center; padding: 120px 40px; background: var(--glass); border-radius: 32px; border: 1px solid var(--glass-border);">
-        <h2 style="font-size: 2rem; margin-bottom: 16px;">No Assets Under Patrol</h2>
-        <p style="color: var(--efinity-text-muted); margin-bottom: 40px;">Deploy your first patrol to start monitoring repositories.</p>
-        <button onclick={() => showAddModal = true}>DEPLOY FIRST PATROL</button>
-      </div>
-    {/if}
+      <div class="content-area">
+        {#if viewMode === 'grid'}
+          <div class="repo-grid">
+            {#each reposStore.repositories as repo (repo.id)}
+              <RepoCard {repo} bind:selectedRepo />
+            {/each}
+          </div>
+        {:else}
+          <div class="repo-list">
+            {#each reposStore.repositories as repo (repo.id)}
+              <RepoListRow {repo} bind:selectedRepo />
+            {/each}
+          </div>
+        {/if}
 
-    <div class="fab" data-tooltip="Deploy New Patrol">
-      <button onclick={() => showAddModal = true} aria-label="Deploy New Patrol">
-        <Icon name="plus" size={28} stroke="white" strokeWidth={3} />
-      </button>
+        {#if reposStore.repositories.length === 0}
+          <div style="text-align: center; padding: 120px 40px; background: var(--surface-container-low); border-radius: 32px;">
+            <h2 style="font-size: 2rem; margin-bottom: 16px;">No Repositories</h2>
+            <p style="color: var(--on-surface-variant); margin-bottom: 32px;">Deploy your first sentinel to begin mirroring.</p>
+            <button onclick={() => showAddModal = true}>ADD REPOSITORY</button>
+          </div>
+        {/if}
+      </div>
+
+      <div class="fab" data-tooltip="Deploy New Patrol">
+        <button onclick={() => showAddModal = true} aria-label="Deploy New Patrol">
+          <Icon name="plus" size={28} stroke="white" strokeWidth={3} />
+        </button>
+      </div>
     </div>
   </div>
 
@@ -131,3 +163,47 @@
     <UserModal bind:show={showUserModal} />
   {/if}
 {/if}
+
+<style>
+  .layout-wrapper {
+    display: flex;
+    min-height: 100vh;
+  }
+  .main-content {
+    flex: 1;
+    margin-left: 280px;
+    display: flex;
+    flex-direction: column;
+  }
+  .hero {
+    padding: 0 40px 40px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .hero-stats {
+    display: flex;
+    gap: 40px;
+  }
+  .stat-block {
+    display: flex;
+    flex-direction: column;
+  }
+  .stat-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--on-surface-variant);
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    color: var(--on-surface);
+    line-height: 1;
+  }
+  .content-area {
+    padding: 0 40px 80px 40px;
+  }
+</style>

@@ -21,19 +21,19 @@
     <img 
       src={getAvatarUrl(repo.url)} 
       alt="" 
-      style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--glass-border);"
+      style="width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--surface-container-highest);"
       onerror={handleAvatarError}
     />
     <div>
       <div style="display: flex; align-items: center; gap: 12px;">
         <div style="font-weight: 700; font-size: 1.1rem;">{repo.name}</div>
         {#if repo.status === 'synced'}
-          <span class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); font-size: 0.6rem; padding: 2px 8px;">SYNCED</span>
+          <span class="badge status-healthy" style="font-size: 0.6rem; padding: 2px 8px;">SYNCED</span>
         {:else if repo.status === 'error'}
-          <span class="badge" style="color: var(--status-red); background: rgba(255, 77, 77, 0.05); font-size: 0.6rem; padding: 2px 8px;">ERROR</span>
+          <span class="badge status-critical" style="font-size: 0.6rem; padding: 2px 8px;">ERROR</span>
         {/if}
       </div>
-      <div style="font-size: 0.8rem; color: var(--efinity-text-muted);">{repo.url.replace('https://github.com/', '')}</div>
+      <div style="font-size: 0.8rem; color: var(--on-surface-variant);">{repo.url.replace('https://github.com/', '')}</div>
     </div>
   </div>
 
