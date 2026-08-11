@@ -11,10 +11,8 @@
   import AuthModal from '$lib/components/Modals/AuthModal.svelte';
   import Sidebar from '$lib/components/Layout/Sidebar.svelte';
   import ToastContainer from '$lib/components/Layout/ToastContainer.svelte';
-  import UserModal from '$lib/components/Modals/UserModal.svelte';
 
   let { children } = $props();
-  let showUserModal = $state(false);
 
   onMount(() => {
     const wsBaseUrl = API_URL ? API_URL.replace('http', 'ws') : (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host;
@@ -63,15 +61,11 @@
   <AuthModal />
 {:else}
   <div class="layout-wrapper">
-    <Sidebar bind:showUserModal />
+    <Sidebar />
     <div class="main-content">
       {@render children()}
     </div>
   </div>
-
-  {#if showUserModal}
-    <UserModal bind:show={showUserModal} />
-  {/if}
 {/if}
 
 <style>

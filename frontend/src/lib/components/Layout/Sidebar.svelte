@@ -2,8 +2,6 @@
   import { page } from '$app/stores';
   import Icon from '$lib/components/Icon.svelte';
   import { authStore } from '$lib/auth.svelte';
-
-  let { showUserModal = $bindable() } = $props();
 </script>
 
 <aside class="sidebar">
@@ -39,12 +37,17 @@
   </nav>
 
   <div class="sidebar-footer">
-    <div class="user-card" onclick={() => showUserModal = true} role="button" tabindex=0 onkeypress={(e) => e.key === 'Enter' && (showUserModal = true)}>
-      <div class="avatar-circle">{authStore.user?.username ? authStore.user.username.charAt(0) : 'U'}</div>
-      <div class="user-info">
-        <span class="user-name">{authStore.user?.username || 'Operator'}</span>
-        <span class="user-role">Tier: Enterprise</span>
+    <div class="user-card-wrapper">
+      <div class="user-card">
+        <div class="avatar-circle">{authStore.user?.username ? authStore.user.username.charAt(0) : 'U'}</div>
+        <div class="user-info">
+          <span class="user-name">{authStore.user?.username || 'Operator'}</span>
+          <span class="user-role">Tier: Enterprise</span>
+        </div>
       </div>
+      <button onclick={() => authStore.handleLogout()} class="logout-btn" title="Logout" aria-label="logout">
+        <Icon name="power" size={16} />
+      </button>
     </div>
   </div>
 </aside>
@@ -125,20 +128,41 @@
     padding: 32px;
   }
 
+  .user-card-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .user-card {
     display: flex;
+    flex: 1;
     align-items: center;
     gap: 12px;
     background: var(--surface-container-low);
     padding: 12px;
     border-radius: 12px;
     border: 1px solid var(--glass-border);
+  }
+
+  .logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: var(--surface-container-low);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--on-surface-variant);
     cursor: pointer;
     transition: all 0.2s;
+    padding: 0;
+  }
 
-    &:hover {
-      background: var(--surface-container-high);
-      border-color: var(--primary);
-    }
+  .logout-btn:hover {
+    background: var(--error-container);
+    color: var(--error);
+    border-color: rgba(255, 77, 77, 0.3);
   }
 </style>
