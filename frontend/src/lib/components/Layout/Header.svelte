@@ -22,7 +22,7 @@
       class="notification-bell" 
       class:has-incidents={incidentsStore.incidents.length > 0} 
       onclick={() => showIncidentModal = true} 
-      data-tooltip="Security Logs"
+      data-tooltip-bottom="Security Logs"
     >
       <Icon name="bell" />
       {#if incidentsStore.incidents.length > 0}
@@ -32,7 +32,7 @@
 
     <div 
       class="badge status-{healthStore.healthStatus?.status || 'offline'}" 
-      data-tooltip={healthStore.healthStatus ? `Internet: ${healthStore.healthStatus.checks.internet.connected ? 'OK' : 'OFF'} | Disk: ${healthStore.healthStatus.checks.disk.used_percent}` : 'Checking...'}
+      data-tooltip-bottom={healthStore.healthStatus ? `Internet: ${healthStore.healthStatus.checks.internet.connected ? 'OK' : 'OFF'} | Disk: ${healthStore.healthStatus.checks.disk.used_percent}` : 'Checking...'}
     >
       <span class="dot"></span>
       {healthStore.healthStatus ? (healthStore.healthStatus.status === 'healthy' ? 'SYSTEM ONLINE' : healthStore.healthStatus.status.toUpperCase()) : 'OFFLINE'}
