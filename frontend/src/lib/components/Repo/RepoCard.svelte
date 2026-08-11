@@ -2,11 +2,12 @@
   import { type Repository } from '$lib/types';
   import { getAvatarUrl, getRemainingTime, getProgress, isSyncing, minutesToHuman, handleAvatarError } from '$lib/utils';
   import Icon from '$lib/components/Icon.svelte';
+  import { goto } from '$app/navigation';
 
-  let { repo, selectedRepo = $bindable() } = $props<{ repo: Repository, selectedRepo: Repository | null }>();
+  let { repo } = $props<{ repo: Repository }>();
 </script>
 
-<div class="card" onclick={() => selectedRepo = repo} onkeydown={() => {}} role='button' tabindex=-1>
+<div class="card" onclick={() => goto(`/repositories/${repo.id}`)} onkeydown={(e) => e.key === 'Enter' && goto(`/repositories/${repo.id}`)} role='button' tabindex=0>
   <div style="position: absolute; top: 32px; right: 32px; display: flex; align-items: center; gap: 16px;">
     <div 
       class="radial-timer" 

@@ -9,16 +9,12 @@
   import Header from '$lib/components/Layout/Header.svelte';
   import RepoCard from '$lib/components/Repo/RepoCard.svelte';
   import RepoListRow from '$lib/components/Repo/RepoListRow.svelte';
-  import RepoDetail from '$lib/components/Repo/RepoDetail.svelte';
   import AddRepoModal from '$lib/components/Modals/AddRepoModal.svelte';
-  import ConfigModal from '$lib/components/Modals/ConfigModal.svelte';
   import IncidentModal from '$lib/components/Modals/IncidentModal.svelte';
   import Icon from '$lib/components/Icon.svelte';
 
   let viewMode = $state<'grid' | 'list'>('grid');
-  let selectedRepo = $state<Repository | null>(null);
   let showAddModal = $state(false);
-  let showConfigModal = $state(false);
   let showIncidentModal = $state(false);
   
   // Search & Filter state
@@ -84,13 +80,13 @@
     {#if viewMode === 'grid'}
       <div class="repo-grid">
         {#each filteredRepos as repo (repo.id)}
-          <RepoCard {repo} bind:selectedRepo />
+          <RepoCard {repo} />
         {/each}
       </div>
     {:else}
       <div class="repo-list">
         {#each filteredRepos as repo (repo.id)}
-          <RepoListRow {repo} bind:selectedRepo />
+          <RepoListRow {repo} />
         {/each}
       </div>
     {/if}
@@ -111,16 +107,8 @@
   </div>
 </div>
 
-{#if selectedRepo}
-  <RepoDetail bind:repo={selectedRepo} bind:selectedRepo bind:showConfigModal />
-{/if}
-
 {#if showAddModal}
   <AddRepoModal bind:show={showAddModal} />
-{/if}
-
-{#if showConfigModal && selectedRepo}
-  <ConfigModal bind:show={showConfigModal} repo={selectedRepo} bind:selectedRepo />
 {/if}
 
 {#if showIncidentModal}

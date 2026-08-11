@@ -1,11 +1,12 @@
 <script lang="ts">
   import { type Repository } from '$lib/types';
   import { getAvatarUrl, getRemainingTime, isSyncing, handleAvatarError, humanToMinutes, minutesToHuman } from '$lib/utils';
+  import { goto } from '$app/navigation';
 
-  let { repo, selectedRepo = $bindable() } = $props<{ repo: Repository, selectedRepo: Repository | null }>();
+  let { repo } = $props<{ repo: Repository }>();
 </script>
 
-<div class="list-item" onclick={() => selectedRepo = repo} onkeydown={() => {}} role='button' tabindex=-1>
+<div class="list-item" onclick={() => goto(`/repositories/${repo.id}`)} onkeydown={(e) => e.key === 'Enter' && goto(`/repositories/${repo.id}`)} role='button' tabindex=0>
   <div style="display: flex; align-items: center; gap: 24px;">
     <div class="radial-timer" class:is-syncing={isSyncing(repo)} data-tooltip={getRemainingTime(repo)} style="width: 32px; height: 32px;">
       <svg width="32" height="32">
