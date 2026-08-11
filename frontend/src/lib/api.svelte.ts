@@ -1,5 +1,5 @@
 import { SettingsAPI } from './settings/settingsApi';
-import { type Repository, type Incident, type User, type Toast } from './types';
+import { type Repository, type Incident, type User, type Toast, type HealthStatus } from './types';
 
 // Use hardcoded URL for dev, or detect from window for production/docker
 export const API_URL = (typeof window !== 'undefined' && window.location.origin.includes(':3000'))
@@ -41,10 +41,10 @@ class GitPatrolAPI {
   user = $state<User | null>(null);
   repositories = $state<Repository[]>([]);
   incidents = $state<Incident[]>([]);
-  healthStatus = $state<{ status: string, checks: any } | null>(null);
+  healthStatus = $state<HealthStatus | null>(null);
   authLoading = $state(true);
   settings = new SettingsAPI();
-  private healthTimer: any = null;
+  private healthTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -78,7 +78,7 @@ class GitPatrolAPI {
       }
     } catch (e) {
       console.error('Auth check failed', e);
-      this.healthStatus = { status: 'offline', checks: {} };
+      this.healthStatus = null;
     } finally {
       this.authLoading = false;
     }
@@ -90,10 +90,10 @@ class GitPatrolAPI {
       if (res.ok) {
         this.healthStatus = await res.json();
       } else {
-        this.healthStatus = { status: 'offline', checks: {} };
+        this.healthStatus = null;
       }
     } catch (e) {
-      this.healthStatus = { status: 'offline', checks: {} };
+      this.healthStatus = null;
     }
   }
 

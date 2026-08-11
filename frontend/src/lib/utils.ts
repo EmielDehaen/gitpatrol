@@ -1,4 +1,5 @@
 import { API_URL } from '$lib/api.svelte';
+import type { Repository } from '$lib/types';
 
 export function getNormalizedUrl(url: string) {
   if (!url || url.length < 3) return '';
@@ -60,7 +61,7 @@ export function handleAvatarError(e: Event) {
   img.src = "/GitHub-Mark.png";
 }
 
-export function isSyncing(repo: any) {
+export function isSyncing(repo: Repository) {
   if (repo.status === 'syncing') return true;
   if (repo.auto_patrol === 0 || !repo.last_sync) return false;
   const lastSync = new Date(repo.last_sync).getTime();
@@ -68,7 +69,7 @@ export function isSyncing(repo: any) {
   return (nextSync - Date.now()) <= 0;
 }
 
-export function getProgress(repo: any) {
+export function getProgress(repo: Repository) {
   if (!repo.last_sync || repo.status === 'syncing' || repo.auto_patrol === 0) return 0;
   const lastSync = new Date(repo.last_sync).getTime();
   const nextSync = lastSync + repo.interval_minutes * 60000;
@@ -78,7 +79,7 @@ export function getProgress(repo: any) {
   return 100 * (remaining / total);
 }
 
-export function getRemainingTime(repo: any, withText: boolean = true, now: number = Date.now()) {
+export function getRemainingTime(repo: Repository, withText: boolean = true, now: number = Date.now()) {
   if (repo.auto_patrol === 0) return 'Manual Patrol Only';
   if (!repo.last_sync || repo.status === 'syncing') return 'Syncing...';
   
