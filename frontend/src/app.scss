@@ -200,24 +200,10 @@ h1 {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
   position: relative;
-  /* Removed overflow: hidden to allow tooltips to show outside */
-
-  /* Left accent strip on hover */
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0; width: 2px;
-    background: var(--primary);
-    transform: scaleY(0);
-    transition: transform 0.2s ease;
-    border-radius: 16px 0 0 16px;
-  }
 
   &:hover {
     background: var(--surface-container-high);
-    &::before {
-      transform: scaleY(1);
-    }
+    box-shadow: var(--primary) 0 0 10px -7px, var(--primary) 0 60px 40px -80px;
   }
 }
 
@@ -238,23 +224,10 @@ h1 {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  /* Removed overflow: hidden to allow tooltips */
-
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0; width: 2px;
-    background: var(--primary);
-    transform: scaleY(0);
-    transition: transform 0.2s ease;
-    border-radius: 12px 0 0 12px;
-  }
 
   &:hover {
     background: var(--surface-container-high);
-    &::before {
-      transform: scaleY(1);
-    }
+    box-shadow: var(--primary) 0 0 10px -6px;
   }
 }
 
@@ -724,13 +697,11 @@ button {
 }
 
 /* Custom Tooltips */
-[data-tooltip] {
+[data-tooltip], [data-tooltip-bottom] {
   position: relative;
 
   &::before {
-    content: attr(data-tooltip);
     position: absolute;
-    bottom: 125%;
     left: 50%;
     transform: translateX(-50%) scale(0.9);
     padding: 8px 12px;
@@ -755,6 +726,16 @@ button {
     visibility: visible;
     transform: translateX(-50%) scale(1);
   }
+}
+
+[data-tooltip]::before {
+  content: attr(data-tooltip);
+  bottom: 125%;
+}
+
+[data-tooltip-bottom]::before {
+  content: attr(data-tooltip-bottom);
+  top: 125%;
 }
 
 /* Markdown Alerts */
