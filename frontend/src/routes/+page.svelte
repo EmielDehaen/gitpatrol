@@ -125,10 +125,20 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
+
+    @media (max-width: 1023px) { padding: 0 24px 24px 24px; }
+    @media (max-width: 767px) {
+      padding: 0 16px 24px 16px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 24px;
+    }
   }
   .hero-stats {
     display: flex;
     gap: 40px;
+
+    @media (max-width: 767px) { gap: 24px; width: 100%; justify-content: space-between; }
   }
   .stat-block {
     display: flex;
@@ -150,5 +160,8 @@
   }
   .content-area {
     padding: 0 40px 80px 40px;
+
+    @media (max-width: 1023px) { padding: 0 24px 60px 24px; }
+    @media (max-width: 767px) { padding: 0 16px 40px 16px; }
   }
 </style>

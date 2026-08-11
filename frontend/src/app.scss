@@ -81,6 +81,9 @@ body {
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.04em;
+
+  @media (max-width: 1439px) { font-size: 2.5rem; }
+  @media (max-width: 767px) { font-size: 2rem; }
 }
 
 .label-md {
@@ -97,6 +100,14 @@ header {
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 80px;
+
+  @media (max-width: 1023px) { margin-bottom: 40px; }
+  @media (max-width: 767px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
 }
 
 h1 {
@@ -105,6 +116,9 @@ h1 {
   font-weight: 700;
   margin: 0;
   letter-spacing: -0.04em;
+
+  @media (max-width: 1439px) { font-size: 2.5rem; }
+  @media (max-width: 767px) { font-size: 2rem; }
 }
 
 .view-toggle {
@@ -191,6 +205,15 @@ h1 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 32px;
+
+  @media (max-width: 1023px) {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+  }
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 .card {
@@ -544,6 +567,18 @@ button {
   margin-bottom: 48px;
   width: 100%;
   justify-content: space-between;
+  
+  @media (max-width: 767px) {
+    overflow-x: auto;
+    justify-content: flex-start;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 12px; /* For scrollbar */
+    
+    /* Hide scrollbar visually but keep functionality */
+    scrollbar-width: none; 
+    &::-webkit-scrollbar { display: none; }
+  }
 }
 
 .tab-btn {

@@ -18,13 +18,13 @@
   <nav class="sidebar-nav">
     <a href="/" class="nav-item" class:active={$page.url.pathname === '/'}>
       <Icon name="grid" />
-      <span>Overview</span>
+      <span class="nav-label">Overview</span>
     </a>
     <a href="/health" class="nav-item" class:active={$page.url.pathname.startsWith('/health')}>
       <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
         <div style="display: flex; align-items: center; gap: 12px;">
           <Icon name="activity" />
-          <span>Health</span>
+          <span class="nav-label">Health</span>
         </div>
         {#if incidentsStore.incidents.length > 0 || (healthStore.healthStatus && healthStore.healthStatus.status !== 'healthy')}
           <span class="pulse-dot" style="background: var(--error);"></span>
@@ -33,11 +33,11 @@
     </a>
     <a href="/logs" class="nav-item" class:active={$page.url.pathname.startsWith('/logs')}>
       <Icon name="terminal" />
-      <span>Logs</span>
+      <span class="nav-label">Logs</span>
     </a>
     <a href="/settings" class="nav-item" class:active={$page.url.pathname.startsWith('/settings')}>
       <Icon name="settings" />
-      <span>Settings</span>
+      <span class="nav-label">Settings</span>
     </a>
   </nav>
 
@@ -67,6 +67,40 @@
     flex-direction: column;
     border-right: 1px solid var(--glass-border);
     z-index: 100;
+    transition: width 0.2s, transform 0.2s;
+
+    @media (max-width: 1439px) {
+      width: 250px;
+    }
+
+    @media (max-width: 1023px) {
+      width: 80px;
+
+      .logo-text, .logo-subtitle, .nav-label, .user-info {
+        display: none;
+      }
+      .logo { justify-content: center; }
+      .sidebar-header { padding: 32px 0; display: flex; flex-direction: column; align-items: center; }
+      .nav-item { justify-content: center; padding: 16px 0; }
+      .sidebar-footer { padding: 32px 16px; }
+      .user-card { padding: 8px; justify-content: center; flex-direction: column; gap: 16px; background: transparent; border: none; }
+      .logout-btn { background: var(--surface-container-low); border: 1px solid var(--glass-border); border-radius: 50%; }
+    }
+
+    @media (max-width: 767px) {
+      top: auto;
+      bottom: 0;
+      width: 100%;
+      height: 70px;
+      flex-direction: row;
+      border-right: none;
+      border-top: 1px solid var(--glass-border);
+      
+      .sidebar-header, .sidebar-footer { display: none; }
+      .sidebar-nav { flex-direction: row; justify-content: space-around; align-items: center; width: 100%; padding: 0 16px; }
+      .nav-item { flex: 1; padding: 0; border-left: none; border-top: 3px solid transparent; height: 100%; display: flex; align-items: center; justify-content: center; }
+      .nav-item.active { border-left: none; border-top-color: var(--primary); background: transparent; }
+    }
   }
 
   .sidebar-header {

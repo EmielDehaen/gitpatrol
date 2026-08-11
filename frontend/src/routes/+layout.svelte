@@ -78,5 +78,10 @@
     margin-left: 280px;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+
+    @media (max-width: 1439px) { margin-left: 250px; }
+    @media (max-width: 1023px) { margin-left: 80px; }
+    @media (max-width: 767px) { margin-left: 0; padding-bottom: 70px; }
   }
 </style>

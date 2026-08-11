@@ -303,6 +303,13 @@
     padding: 40px;
     display: flex;
     align-items: flex-start;
+
+    @media (max-width: 1023px) { padding: 24px; }
+    @media (max-width: 767px) {
+      flex-direction: column;
+      gap: 24px;
+      padding: 16px;
+    }
   }
   
   .close-btn {
@@ -319,11 +326,18 @@
     transition: all 0.2s;
     margin-right: 32px;
     padding: 0;
+    flex-shrink: 0;
 
     &:hover {
       background: var(--surface-container-high);
       color: #fff;
       transform: scale(1.05);
+    }
+
+    @media (max-width: 767px) {
+      margin-right: 0;
+      width: 40px;
+      height: 40px;
     }
   }
 
@@ -331,6 +345,12 @@
     display: flex;
     align-items: center;
     gap: 24px;
+
+    @media (max-width: 767px) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
   }
 
   .repo-avatar {
@@ -352,6 +372,16 @@
     gap: 24px;
     padding: 0 40px 40px 40px;
     margin-left: 120px; /* Aligns roughly with title */
+
+    @media (max-width: 1023px) {
+      padding: 0 24px 24px 24px;
+      margin-left: 0;
+    }
+    @media (max-width: 767px) {
+      flex-direction: column;
+      padding: 0 16px 24px 16px;
+      gap: 12px;
+    }
   }
 
   .stat-card {
@@ -382,6 +412,10 @@
   .content-area {
     padding: 0 40px 80px 40px;
     max-width: 1400px;
+    margin: 0 auto;
+
+    @media (max-width: 1023px) { padding: 0 24px 60px 24px; }
+    @media (max-width: 767px) { padding: 0 16px 40px 16px; }
   }
 
   .tab-content-wrapper {
