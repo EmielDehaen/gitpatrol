@@ -42,13 +42,11 @@
   </nav>
 
   <div class="sidebar-footer">
-    <div class="user-card-wrapper">
-      <div class="user-card">
-        <div class="avatar-circle">{authStore.user?.username ? authStore.user.username.charAt(0) : 'U'}</div>
-        <div class="user-info">
-          <span class="user-name">{authStore.user?.username || 'Operator'}</span>
-          <span class="user-role">Tier: Enterprise</span>
-        </div>
+    <div class="user-card">
+      <div class="avatar-circle">{authStore.user?.username ? authStore.user.username.charAt(0) : 'U'}</div>
+      <div class="user-info">
+        <span class="user-name">{authStore.user?.username || 'Operator'}</span>
+        <span class="user-role">Tier: Enterprise</span>
       </div>
       <button onclick={() => authStore.handleLogout()} class="logout-btn" title="Logout" aria-label="logout">
         <Icon name="power" size={16} />
@@ -133,12 +131,6 @@
     padding: 32px;
   }
 
-  .user-card-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
   .user-card {
     display: flex;
     flex: 1;
@@ -150,15 +142,19 @@
     border: 1px solid var(--glass-border);
   }
 
+  .user-info {
+    flex: 1;
+  }
+
   .logout-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    background: var(--surface-container-low);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
     color: var(--on-surface-variant);
     cursor: pointer;
     transition: all 0.2s;

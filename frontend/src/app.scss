@@ -200,7 +200,7 @@ h1 {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
   position: relative;
-  overflow: hidden;
+  /* Removed overflow: hidden to allow tooltips to show outside */
 
   /* Left accent strip on hover */
   &::before {
@@ -210,6 +210,7 @@ h1 {
     background: var(--primary);
     transform: scaleY(0);
     transition: transform 0.2s ease;
+    border-radius: 16px 0 0 16px;
   }
 
   &:hover {
@@ -237,7 +238,7 @@ h1 {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  overflow: hidden;
+  /* Removed overflow: hidden to allow tooltips */
 
   &::before {
     content: '';
@@ -246,6 +247,7 @@ h1 {
     background: var(--primary);
     transform: scaleY(0);
     transition: transform 0.2s ease;
+    border-radius: 12px 0 0 12px;
   }
 
   &:hover {
@@ -430,14 +432,93 @@ h1 {
 
 .modal-body { padding: 48px; overflow-y: auto; }
 
-/* Inputs */
-input {
-  width: 100%; background: var(--surface-container-highest); border: none;
-  color: var(--on-surface); padding: 18px 24px; border-radius: 12px; margin-bottom: 24px; font-size: 1rem; transition: all 0.3s;
+/* Forms & Inputs */
+label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+select {
+  width: 100%; 
+  background: var(--surface-container-low);
+  border: 1px solid var(--glass-border);
+  color: var(--on-surface); 
+  padding: 16px 20px; 
+  border-radius: 12px; 
+  margin-bottom: 24px; 
+  font-size: 1rem; 
+  transition: all 0.2s;
   caret-color: var(--primary);
+  font-family: inherit;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
 
   &:focus {
-    box-shadow: 0 0 16px rgba(77, 221, 187, 0.2); outline: none;
+    box-shadow: 0 0 0 2px rgba(77, 221, 187, 0.2); 
+    border-color: var(--primary);
+    outline: none;
+    background: var(--surface-container-high);
+  }
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23a6accd%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  background-color: var(--surface-container-low);
+  margin: 0;
+  font: inherit;
+  color: currentColor;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    transform: scale(0);
+    transition: 120ms transform ease-in-out;
+    box-shadow: inset 1em 1em var(--surface);
+    background-color: var(--primary);
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  }
+
+  &:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  &:checked::before {
+    transform: scale(1);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba(77, 221, 187, 0.2); 
+    border-color: var(--primary);
+    outline: none;
   }
 }
 

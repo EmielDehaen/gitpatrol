@@ -202,44 +202,44 @@
 <div class="page-container" transition:fade>
   {#if repo}
     <div class="header">
-      <button class="icon-btn" onclick={() => goto('/')} style="margin-right: 24px;">
-        <Icon name="x" size={24} />
+      <button class="close-btn" onclick={() => goto('/')} aria-label="Close">
+        <Icon name="x" size={20} />
       </button>
       
-      <div style="display: flex; flex: 1; align-items: flex-start; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 32px;">
-          <img src={getAvatarUrl(repo.url)} onerror={handleAvatarError} alt={repo.name} class="repo-avatar" />
-          <div>
-            <div style="display: flex; align-items: center; gap: 16px;">
-              <h1 class="display-lg" style="margin: 0; font-size: 3rem;">{repo.name}</h1>
-              <div class="badge status-healthy" style="font-size: 0.9rem; padding: 6px 16px;">
-                <span class="dot"></span>
-                {repo.health_score}% HEALTH
-              </div>
+      <div class="repo-title-section">
+        <img src={getAvatarUrl(repo.url)} onerror={handleAvatarError} alt={repo.name} class="repo-avatar" />
+        <div>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <h1 class="display-lg" style="margin: 0; font-size: 2.5rem;">{repo.name}</h1>
+            <div class="badge status-healthy" style="font-size: 0.8rem; padding: 4px 12px;">
+              <span class="dot"></span>
+              {repo.health_score}% HEALTH
             </div>
-            <a href={repo.url} target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: none; font-family: monospace; font-size: 1rem; display: block; margin-top: 8px;">{repo.url} ↗</a>
           </div>
+          <a href={repo.url} target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: none; font-family: monospace; font-size: 0.9rem; display: block; margin-top: 4px;">{repo.url} ↗</a>
         </div>
+      </div>
 
-        <div style="display: flex; gap: 16px;">
-          <button class="secondary" style="border-color: rgba(77, 221, 187, 0.2);" onclick={exportRepo} data-tooltip="Recovery Export">
-            <Icon name="download" />
-          </button>
-          <button class="secondary" style="border-color: rgba(77, 221, 187, 0.2);" onclick={syncNow} data-tooltip="Sync Now">
-            <Icon name="refresh" />
-          </button>
-        </div>
+      <div style="display: flex; gap: 12px; margin-left: auto;">
+        <button class="secondary action-btn" onclick={exportRepo} data-tooltip="Recovery Export">
+          <Icon name="download" />
+        </button>
+        <button class="secondary action-btn" onclick={syncNow} data-tooltip="Sync Now">
+          <Icon name="refresh" />
+        </button>
       </div>
     </div>
 
-    <div class="hero-stats" style="padding: 0 40px 40px 40px; margin-left: 96px;">
-      <div class="stat-block">
-        <span class="stat-label">NEXT SYNC</span>
-        <span class="stat-value" style="font-size: 1.5rem;">{getRemainingTime(repo, false, now)}</span>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <Icon name="activity" size={24} stroke="var(--primary)" style="margin-bottom: 12px; opacity: 0.5;" />
+        <span class="stat-label">NEXT PATROL</span>
+        <span class="stat-value">{getRemainingTime(repo, false, now)}</span>
       </div>
-      <div class="stat-block">
-        <span class="stat-label">INTERVAL</span>
-        <span class="stat-value" style="font-size: 1.5rem;">{minutesToHuman(repo.interval_minutes)}</span>
+      <div class="stat-card">
+        <Icon name="zap" size={24} stroke="var(--primary)" style="margin-bottom: 12px; opacity: 0.5;" />
+        <span class="stat-label">SCAN INTERVAL</span>
+        <span class="stat-value">{minutesToHuman(repo.interval_minutes)}</span>
       </div>
     </div>
 
@@ -302,15 +302,81 @@
   .header {
     padding: 40px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
   }
   
+  .close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--surface-container-low);
+    border: 1px solid var(--glass-border);
+    color: var(--on-surface-variant);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-right: 32px;
+    padding: 0;
+
+    &:hover {
+      background: var(--surface-container-high);
+      color: #fff;
+      transform: scale(1.05);
+    }
+  }
+
+  .repo-title-section {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
   .repo-avatar {
-    width: 80px;
-    height: 80px;
+    width: 72px;
+    height: 72px;
     border-radius: 20px;
     border: none;
     background: var(--surface-container-highest);
+  }
+
+  .action-btn {
+    padding: 12px;
+    border-radius: 12px;
+    border-color: rgba(77, 221, 187, 0.2);
+  }
+
+  .stats-grid {
+    display: flex;
+    gap: 24px;
+    padding: 0 40px 40px 40px;
+    margin-left: 120px; /* Aligns roughly with title */
+  }
+
+  .stat-card {
+    background: var(--surface-container-low);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--on-surface-variant);
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--on-surface);
   }
 
   .content-area {
