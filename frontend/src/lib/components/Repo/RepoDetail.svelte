@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { parseMarkdown } from '$lib/markdown';
 
-  import { type Repository, type Commit } from '$lib/types';
+  import { type Repository, type Commit, type Issue, type Release } from '$lib/types';
   import { API_URL, api, apiFetch, toastHandler } from '$lib/api.svelte';
   import { fade } from 'svelte/transition';
   import { getAvatarUrl, getRemainingTime, handleAvatarError, minutesToHuman } from '$lib/utils';
@@ -18,8 +18,8 @@
   let activeTab = $state<'readme' | 'issues' | 'releases' | 'wiki' | 'logs'>('readme');
   let readmeContent = $state('Loading mission briefing...');
   let wikiContent = $state('');
-  let issues = $state<any[]>([]);
-  let releases = $state<any[]>([]);
+  let issues = $state<Issue[]>([]);
+  let releases = $state<Release[]>([]);
   let now = $state(Date.now());
   let exportDestination = $state('');
 

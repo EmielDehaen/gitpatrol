@@ -1,6 +1,7 @@
 <script lang="ts">
   import { marked } from '$lib/markdown';
-  let { releases } = $props<{ releases: any[] }>();
+  import type { Release } from '$lib/types';
+  let { releases } = $props<{ releases: Release[] }>();
 </script>
 
 <div style="display: flex; flex-direction: column; gap: 24px;">

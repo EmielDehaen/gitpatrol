@@ -1,5 +1,6 @@
 <script lang="ts">
-  let { issues } = $props<{ issues: any[] }>();
+  import type { Issue } from '$lib/types';
+  let { issues } = $props<{ issues: Issue[] }>();
 </script>
 
 <div style="display: flex; flex-direction: column; gap: 16px;">
