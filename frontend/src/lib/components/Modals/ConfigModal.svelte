@@ -26,7 +26,9 @@
       } else {
         toastHandler.showToast('Failed to update configuration.', 'error');
       }
-    } catch (e) {}
+    } catch (e) {
+      toastHandler.showToast('Network error: could not update configuration.', 'error');
+    }
   }
 
   async function deleteRepo() {
@@ -37,7 +39,9 @@
         selectedRepo = null; show = false; api.fetchRepos(); 
         toastHandler.showToast('Patrol terminated.', 'info');
       }
-    } catch (e) {}
+    } catch (e) {
+      toastHandler.showToast('Network error: could not terminate patrol.', 'error');
+    }
   }
 </script>
 

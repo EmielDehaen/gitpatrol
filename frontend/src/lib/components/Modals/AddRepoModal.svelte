@@ -43,7 +43,9 @@
         const err = await res.json();
         toastHandler.showToast(err.error || 'Failed to deploy patrol.', 'error');
       }
-    } catch (e) {}
+    } catch (e) {
+      toastHandler.showToast('Network error: could not deploy patrol.', 'error');
+    }
   }
 </script>
 
