@@ -2,6 +2,8 @@
   import { page } from '$app/stores';
   import Icon from '$lib/components/Icon.svelte';
   import { authStore } from '$lib/auth.svelte';
+  import { incidentsStore } from '$lib/incidents.svelte';
+  import { healthStore } from '$lib/health.svelte';
 </script>
 
 <aside class="sidebar">
@@ -18,17 +20,16 @@
       <Icon name="grid" />
       <span>Overview</span>
     </a>
-    <a href="/repositories" class="nav-item" class:active={$page.url.pathname.startsWith('/repositories')}>
-      <Icon name="folder" />
-      <span>Repositories</span>
-    </a>
-    <a href="/mirroring" class="nav-item" class:active={$page.url.pathname.startsWith('/mirroring')}>
-      <Icon name="git-merge" />
-      <span>Mirroring</span>
-    </a>
     <a href="/health" class="nav-item" class:active={$page.url.pathname.startsWith('/health')}>
-      <Icon name="activity" />
-      <span>Health</span>
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <Icon name="activity" />
+          <span>Health</span>
+        </div>
+        {#if incidentsStore.incidents.length > 0 || (healthStore.healthStatus && healthStore.healthStatus.status !== 'healthy')}
+          <span class="pulse-dot" style="background: var(--error);"></span>
+        {/if}
+      </div>
     </a>
     <a href="/settings" class="nav-item" class:active={$page.url.pathname.startsWith('/settings')}>
       <Icon name="settings" />
