@@ -1,6 +1,7 @@
 <script lang="ts">
   import { toastHandler } from '$lib/api.svelte';
   import { fade, fly } from 'svelte/transition';
+  import Icon from '$lib/components/Icon.svelte';
 </script>
 
 <div class="toast-container">
@@ -11,11 +12,11 @@
       out:fade={{ duration: 200 }}
     >
       {#if toast.type === 'success'}
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <Icon name="check" size={18} strokeWidth={3} />
       {:else if toast.type === 'error'}
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <Icon name="alert-circle" size={18} strokeWidth={3} />
       {:else}
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        <Icon name="info" size={18} strokeWidth={3} />
       {/if}
       {toast.message}
     </div>

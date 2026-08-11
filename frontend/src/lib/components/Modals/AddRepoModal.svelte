@@ -2,6 +2,7 @@
   import { api, apiFetch, toastHandler } from '$lib/api.svelte';
   import { suggestName, humanToMinutes, getNormalizedUrl, getAvatarUrl } from '$lib/utils';
   import { fade } from 'svelte/transition';
+  import Icon from '$lib/components/Icon.svelte';
 
   let { show = $bindable() } = $props();
 
@@ -59,7 +60,7 @@
       {#if getNormalizedUrl(url)}
         <div style="margin-bottom: 24px;">
           <a href={getNormalizedUrl(url)} target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--efinity-blue); text-decoration: none; font-family: monospace; opacity: 0.8; display: flex; align-items: center; gap: 6px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+            <Icon name="external-link" size={12} strokeWidth={3} />
             {getNormalizedUrl(url)}
           </a>
         </div>
