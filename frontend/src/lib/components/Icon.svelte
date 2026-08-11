@@ -17,7 +17,10 @@
     | 'folder'
     | 'git-merge'
     | 'activity'
-    | 'zap';
+    | 'zap'
+    | 'terminal'
+    | 'play'
+    | 'pause';
 
   let {
     name,
@@ -101,5 +104,13 @@
     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
   {:else if name === 'zap'}
     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+  {:else if name === 'terminal'}
+    <polyline points="4 17 10 11 4 5"></polyline>
+    <line x1="12" y1="19" x2="20" y2="19"></line>
+  {:else if name === 'play'}
+    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+  {:else if name === 'pause'}
+    <rect x="6" y="4" width="4" height="16"></rect>
+    <rect x="14" y="4" width="4" height="16"></rect>
   {/if}
 </svg>

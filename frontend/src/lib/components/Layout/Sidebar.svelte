@@ -31,6 +31,10 @@
         {/if}
       </div>
     </a>
+    <a href="/logs" class="nav-item" class:active={$page.url.pathname.startsWith('/logs')}>
+      <Icon name="terminal" />
+      <span>Logs</span>
+    </a>
     <a href="/settings" class="nav-item" class:active={$page.url.pathname.startsWith('/settings')}>
       <Icon name="settings" />
       <span>Settings</span>

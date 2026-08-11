@@ -23,7 +23,7 @@
   let repoId = $derived(Number($page.params.id));
   let repo = $derived(reposStore.repositories.find(r => r.id === repoId));
 
-  let activeTab = $state<'readme' | 'issues' | 'releases' | 'wiki' | 'commits' | 'terminal' | 'settings'>('readme');
+  let activeTab = $state<'readme' | 'issues' | 'releases' | 'wiki' | 'commits' | 'settings'>('readme');
   let readmeContent = $state('Loading mission briefing...');
   let wikiContent = $state('');
   let issues = $state<Issue[]>([]);
@@ -35,10 +35,6 @@
   let intervalString = $state('');
   let autoPatrol = $state(false);
 
-  // Terminal State
-  let terminalLines = $state<string[]>([]);
-  let terminalContainer = $state<HTMLDivElement>();
-
   async function fetchSettings() {
     const settings = await settingsApi.getSettings();
     if (settings) {
@@ -46,62 +42,18 @@
     }
   }
 
-  // Terminal logic
-  function pushTerminalLog(line: string) {
-    const timestamp = new Date().toLocaleTimeString([], { hour12: false });
-    terminalLines = [...terminalLines, `[${timestamp}] ${line}`];
-    tick().then(() => {
-      if (terminalContainer) {
-        terminalContainer.scrollTop = terminalContainer.scrollHeight;
-      }
-    });
-  }
-
   $effect(() => {
     if (repo) {
       intervalString = minutesToHuman(repo.interval_minutes);
       autoPatrol = repo.auto_patrol === 1;
-      
-      // Initialize terminal history based on repo status
-      if (terminalLines.length === 0) {
-        pushTerminalLog(`GitPatrol Terminal Session Started for ${repo.name}`);
-        pushTerminalLog(`Target: ${repo.url}`);
-        if (repo.last_sync) {
-          pushTerminalLog(`Last known sync: ${new Date(repo.last_sync).toLocaleString()}`);
-        }
-        pushTerminalLog(`Current status: ${repo.status.toUpperCase()}`);
-        if (repo.error_message) {
-          pushTerminalLog(`ERROR: ${repo.error_message}`);
-        }
-      }
     }
   });
 
   onMount(() => {
     fetchSettings();
     const interval = setInterval(() => { now = Date.now(); }, 1000);
-
-    // Terminal websocket hooking
-    const wsBaseUrl = API_URL ? API_URL.replace('http', 'ws') : (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host;
-    const wsUrl = wsBaseUrl + '/ws';
-    const ws = new WebSocket(wsUrl);
-    ws.onmessage = (event) => {
-      if (authStore.isAuthenticated) {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'status_update' && Number(data.id) === repoId) {
-            pushTerminalLog(`Received status update: ${data.status.toUpperCase()}`);
-            if (data.status === 'syncing') pushTerminalLog(`> Executing git fetch origin...`);
-            if (data.status === 'synced') pushTerminalLog(`> Sync successful. Remote mirrors updated.`);
-            if (data.status === 'error') pushTerminalLog(`> ERROR: ${data.error}`);
-          }
-        } catch (e) {}
-      }
-    };
-
     return () => {
       clearInterval(interval);
-      ws.close();
     };
   });
 
@@ -169,7 +121,6 @@
   async function syncNow() {
     if (!repo) return;
     try {
-      pushTerminalLog(`Manual sync initiated by operator.`);
       await apiFetch(`/api/repositories/${repo.id}/sync`, { method: 'POST' });
       toastHandler.showToast('Sync initiated.', 'info');
     } catch (e) {
@@ -184,7 +135,6 @@
       return;
     }
     try {
-      pushTerminalLog(`Initiating recovery export to ${exportDestination.toUpperCase()}...`);
       toastHandler.showToast(`Initiating recovery to ${exportDestination.toUpperCase()}...`, 'info');
       const res = await apiFetch(`/api/repositories/${repo.id}/export`, { 
         method: 'POST',
@@ -193,14 +143,12 @@
       });
       if (res.ok) {
         const data = await res.json();
-        pushTerminalLog(`Recovery successful! Destination URL generated.`);
         toastHandler.showToast('Repository recovered successfully!', 'success');
         if (data.destination_url) {
           window.open(data.destination_url, '_blank');
         }
       } else {
         const data = await res.json();
-        pushTerminalLog(`ERROR: Recovery failed - ${data.error}`);
         toastHandler.showToast(data.error || 'Recovery failed.', 'error');
       }
     } catch (e) {
@@ -212,7 +160,6 @@
   async function updateConfig() {
     if (!repo) return;
     try {
-      pushTerminalLog(`Updating configuration...`);
       const res = await apiFetch(`/api/repositories/${repo.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -223,7 +170,6 @@
       });
       if (res.ok) { 
         await reposStore.fetchRepos();
-        pushTerminalLog(`Configuration applied successfully.`);
         toastHandler.showToast('Configuration updated.', 'success');
       } else {
         toastHandler.showToast('Failed to update configuration.', 'error');
@@ -304,7 +250,6 @@
         <button class="tab-btn" class:active={activeTab === 'releases'} onclick={() => activeTab = 'releases'}>CHRONICLE <span class="tab-count">{releases.length}</span></button>
         <button class="tab-btn" class:active={activeTab === 'wiki'} onclick={() => activeTab = 'wiki'}>WIKI</button>
         <button class="tab-btn" class:active={activeTab === 'commits'} onclick={() => activeTab = 'commits'}>COMMITS</button>
-        <button class="tab-btn" class:active={activeTab === 'terminal'} onclick={() => activeTab = 'terminal'}>TERMINAL</button>
         <button class="tab-btn" class:active={activeTab === 'settings'} onclick={() => activeTab = 'settings'}>SETTINGS</button>
       </div>
 
@@ -319,13 +264,6 @@
           <RepoWiki {wikiContent} />
         {:else if activeTab === 'commits'}
           <RepoLogs commits={parseCommits(repo.last_commit || '')} />
-        {:else if activeTab === 'terminal'}
-          <div class="terminal-container" bind:this={terminalContainer}>
-            {#each terminalLines as line}
-              <div class="terminal-line">{line}</div>
-            {/each}
-            <div class="terminal-cursor">_</div>
-          </div>
         {:else if activeTab === 'settings'}
           <div class="settings-card">
             <h2 style="font-size: 1.25rem; margin-bottom: 24px;">Patrol Configuration</h2>
@@ -395,36 +333,5 @@
     height: 1px;
     background: var(--surface-container-highest);
     margin: 32px 0;
-  }
-
-  /* Terminal UI */
-  .terminal-container {
-    background: #000000;
-    border-radius: 12px;
-    padding: 24px;
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-    font-size: 0.9rem;
-    line-height: 1.6;
-    color: #4ade80; /* Hacker green */
-    height: 500px;
-    overflow-y: auto;
-    border: 1px solid rgba(77, 221, 187, 0.2);
-    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
-  }
-
-  .terminal-line {
-    word-break: break-all;
-    margin-bottom: 4px;
-  }
-
-  .terminal-cursor {
-    display: inline-block;
-    width: 10px;
-    animation: blink 1s step-end infinite;
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
   }
 </style>
