@@ -221,10 +221,10 @@
       </div>
 
       <div style="display: flex; gap: 12px; margin-left: auto;">
-        <button class="secondary action-btn" onclick={exportRepo} data-tooltip="Recovery Export" data-tooltip-align="right">
+        <button class="secondary action-btn" onclick={exportRepo} data-tooltip="Recovery Export">
           <Icon name="download" />
         </button>
-        <button class="secondary action-btn" onclick={syncNow} data-tooltip="Sync Now" data-tooltip-align="right">
+        <button class="secondary action-btn" onclick={syncNow} data-tooltip="Sync Now">
           <Icon name="refresh" />
         </button>
       </div>

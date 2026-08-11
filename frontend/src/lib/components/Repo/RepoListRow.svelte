@@ -8,7 +8,7 @@
 
 <div class="list-item" onclick={() => goto(`/repositories/${repo.id}`)} onkeydown={(e) => e.key === 'Enter' && goto(`/repositories/${repo.id}`)} role='button' tabindex=0>
   <div style="display: flex; align-items: center; gap: 24px;">
-    <div class="radial-timer" class:is-syncing={isSyncing(repo)} data-tooltip={getRemainingTime(repo)} data-tooltip-align="right" style="width: 32px; height: 32px;">
+    <div class="radial-timer" class:is-syncing={isSyncing(repo)} data-tooltip={getRemainingTime(repo)} style="width: 32px; height: 32px;">
       <svg width="32" height="32">
         <circle cx="16" cy="16" r="12" />
         <circle 

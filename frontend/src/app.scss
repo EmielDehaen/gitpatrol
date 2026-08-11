@@ -206,11 +206,11 @@ h1 {
   &::before {
     content: '';
     position: absolute;
-    left: 0; top: 16px; bottom: 16px; width: 3px;
+    left: 0; top: 0; bottom: 0; width: 2px;
     background: var(--primary);
     transform: scaleY(0);
     transition: transform 0.2s ease;
-    border-radius: 4px;
+    border-radius: 16px 0 0 16px;
   }
 
   &:hover {
@@ -243,11 +243,11 @@ h1 {
   &::before {
     content: '';
     position: absolute;
-    left: 0; top: 12px; bottom: 12px; width: 3px;
+    left: 0; top: 0; bottom: 0; width: 2px;
     background: var(--primary);
     transform: scaleY(0);
     transition: transform 0.2s ease;
-    border-radius: 4px;
+    border-radius: 12px 0 0 12px;
   }
 
   &:hover {
@@ -754,16 +754,6 @@ button {
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%) scale(1);
-  }
-
-  &[data-tooltip-align="right"]::before {
-    left: auto;
-    right: 0;
-    transform: translateX(0) scale(0.9);
-  }
-
-  &[data-tooltip-align="right"]:hover::before {
-    transform: translateX(0) scale(1);
   }
 }
 
