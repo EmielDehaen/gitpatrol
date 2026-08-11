@@ -26,7 +26,8 @@
   let showUserModal = $state(false);
 
   onMount(() => {
-    const wsUrl = API_URL.replace('http', 'ws') + '/ws';
+    const wsBaseUrl = API_URL ? API_URL.replace('http', 'ws') : (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host;
+    const wsUrl = wsBaseUrl + '/ws';
     const ws = new WebSocket(wsUrl);
     ws.onmessage = (event) => {
       if (api.isAuthenticated) {

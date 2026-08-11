@@ -1,12 +1,7 @@
 import { SettingsAPI } from './settings/settingsApi';
 import { type Repository, type Incident, type User, type Toast, type HealthStatus } from './types';
 
-// Use hardcoded URL for dev, or detect from window for production/docker
-export const API_URL = (typeof window !== 'undefined' && window.location.origin.includes(':3000'))
-  ? 'http://localhost:8080'
-  : 'http://localhost:8080'; // Default fallback
-
-// Note: In a real production build, we might want to use window.location.origin
+export const API_URL = import.meta.env.VITE_API_URL || '';
 
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   const res = await fetch(`${API_URL}${endpoint}`, {
