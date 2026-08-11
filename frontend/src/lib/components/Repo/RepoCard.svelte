@@ -13,6 +13,7 @@
       class="radial-timer" 
       class:is-syncing={isSyncing(repo)}
       data-tooltip={getRemainingTime(repo)}
+      data-tooltip-align="right"
     >
       <svg width="40" height="40">
         <circle cx="20" cy="20" r="16" />

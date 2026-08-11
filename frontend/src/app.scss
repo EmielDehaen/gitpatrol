@@ -206,11 +206,11 @@ h1 {
   &::before {
     content: '';
     position: absolute;
-    left: 0; top: 0; bottom: 0; width: 2px;
+    left: 0; top: 16px; bottom: 16px; width: 3px;
     background: var(--primary);
     transform: scaleY(0);
     transition: transform 0.2s ease;
-    border-radius: 16px 0 0 16px;
+    border-radius: 4px;
   }
 
   &:hover {
@@ -243,11 +243,11 @@ h1 {
   &::before {
     content: '';
     position: absolute;
-    left: 0; top: 0; bottom: 0; width: 2px;
+    left: 0; top: 12px; bottom: 12px; width: 3px;
     background: var(--primary);
     transform: scaleY(0);
     transition: transform 0.2s ease;
-    border-radius: 12px 0 0 12px;
+    border-radius: 4px;
   }
 
   &:hover {
@@ -497,13 +497,14 @@ input[type="checkbox"] {
 
   &::before {
     content: "";
-    width: 12px;
-    height: 12px;
-    transform: scale(0);
+    width: 6px;
+    height: 10px;
+    border: solid var(--surface);
+    border-width: 0 2px 2px 0;
+    transform: scale(0) rotate(45deg);
     transition: 120ms transform ease-in-out;
-    box-shadow: inset 1em 1em var(--surface);
-    background-color: var(--primary);
-    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    background-color: transparent;
+    margin-top: -2px;
   }
 
   &:checked {
@@ -512,7 +513,7 @@ input[type="checkbox"] {
   }
 
   &:checked::before {
-    transform: scale(1);
+    transform: scale(1) rotate(45deg);
   }
 
   &:focus {
@@ -753,6 +754,16 @@ button {
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%) scale(1);
+  }
+
+  &[data-tooltip-align="right"]::before {
+    left: auto;
+    right: 0;
+    transform: translateX(0) scale(0.9);
+  }
+
+  &[data-tooltip-align="right"]:hover::before {
+    transform: translateX(0) scale(1);
   }
 }
 
