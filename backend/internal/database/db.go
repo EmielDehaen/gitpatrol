@@ -24,6 +24,7 @@ func NewDB(dbPath string) (*DB, error) {
 	// Enable WAL mode and set busy timeout for better concurrency
 	db.Exec("PRAGMA journal_mode=WAL;")
 	db.Exec("PRAGMA busy_timeout=5000;")
+	db.SetMaxOpenConns(1)
 
 	if err := createTables(db); err != nil {
 		return nil, err
