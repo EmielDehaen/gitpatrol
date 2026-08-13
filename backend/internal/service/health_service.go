@@ -17,16 +17,18 @@ type HealthService struct {
 	db          *database.DB
 	hub         *websocket.Hub
 	syncManager *SyncManager
+	config      *config.Config
 	status      string
 	checks      map[string]interface{}
 	mu          sync.RWMutex
 }
 
-func NewHealthService(db *database.DB, hub *websocket.Hub, syncManager *SyncManager) *HealthService {
+func NewHealthService(db *database.DB, hub *websocket.Hub, syncManager *SyncManager, cfg *config.Config) *HealthService {
 	return &HealthService{
 		db:          db,
 		hub:         hub,
 		syncManager: syncManager,
+		config:      cfg,
 		status:      "healthy",
 		checks:      make(map[string]interface{}),
 	}
@@ -44,19 +46,21 @@ func (s *HealthService) Start() {
 }
 
 func (s *HealthService) CleanupLogs() {
-	// Delete logs older than 7 days
-	_, err := s.db.Exec(`DELETE FROM system_logs WHERE created_at < datetime('now', '-7 days')`)
+	// Delete logs older than X days
+	queryDays := fmt.Sprintf(`DELETE FROM system_logs WHERE created_at < datetime('now', '-%d days')`, s.config.LogRetentionDays)
+	_, err := s.db.Exec(queryDays)
 	if err != nil {
 		slog.Error("Failed to cleanup old logs", "error", err)
 	}
 	
-	// Keep only the most recent 10,000 entries
-	_, err = s.db.Exec(`
+	// Keep only the most recent Y entries
+	queryRows := fmt.Sprintf(`
 		DELETE FROM system_logs 
 		WHERE id NOT IN (
-			SELECT id FROM system_logs ORDER BY id DESC LIMIT 10000
+			SELECT id FROM system_logs ORDER BY id DESC LIMIT %d
 		)
-	`)
+	`, s.config.LogMaxRows)
+	_, err = s.db.Exec(queryRows)
 	if err != nil {
 		slog.Error("Failed to trim log limits", "error", err)
 	}

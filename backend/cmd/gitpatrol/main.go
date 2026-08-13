@@ -40,7 +40,7 @@ func main() {
 	repoService := service.NewRepoService(db, hub, cfg)
 	syncManager := service.NewSyncManager(cfg.WorkerCount, db, hub, repoService)
 	authService := auth.NewAuthService(cfg, db)
-	healthService := service.NewHealthService(db, hub, syncManager)
+	healthService := service.NewHealthService(db, hub, syncManager, cfg)
 	exportService := service.NewExportService(db, cfg)
 
 	healthService.Start()

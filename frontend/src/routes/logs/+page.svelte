@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { fade } from 'svelte/transition';
   import Icon from '$lib/components/Icon.svelte';
-  import { apiFetch } from '$lib/api';
+  import { apiFetch } from '$lib/client';
   import { browser } from '$app/environment';
 
   type Syslog = {
@@ -27,7 +27,8 @@
   onMount(async () => {
     // 1. Fetch historical logs
     try {
-      const data = await apiFetch('/api/logs?limit=500');
+      const res = await apiFetch('/api/logs?limit=500');
+      const data = await res.json();
       // Backend returns them DESC, we want ASC for terminal flow
       logs = data.reverse();
     } catch (e) {
