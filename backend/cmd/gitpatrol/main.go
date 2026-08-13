@@ -11,6 +11,7 @@ import (
 	"gitpatrol/internal/auth"
 	"gitpatrol/internal/config"
 	"gitpatrol/internal/database"
+	"gitpatrol/internal/logging"
 	"gitpatrol/internal/service"
 	"gitpatrol/internal/websocket"
 	"github.com/labstack/echo/v4"
@@ -32,6 +33,10 @@ func main() {
 	os.MkdirAll("./data", 0755)
 
 	hub := websocket.NewHub()
+	
+	// Setup Structured Logging
+	logging.Setup(db, hub.BroadcastSystemLog)
+
 	repoService := service.NewRepoService(db, hub, cfg)
 	syncManager := service.NewSyncManager(cfg.WorkerCount, db, hub, repoService)
 	authService := auth.NewAuthService(cfg, db)

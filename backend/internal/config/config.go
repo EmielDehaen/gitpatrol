@@ -3,7 +3,8 @@ package config
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"log"
+	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 
@@ -125,18 +126,14 @@ func saveEnv(path, jwt, pepper, dbPath, github, gitlabURL, gitlabToken, giteaURL
 		"WORKERS":            strconv.Itoa(workerCount),
 		"GITHUB_TOKEN":       github,
 		"GITLAB_URL":         gitlabURL,
-		"GITLAB_TOKEN":       gitlabToken,
-		"GITEA_URL":          giteaURL,
-		"GITEA_TOKEN":        giteaToken,
-		"EXPORT_DESTINATION": exportDest,
-	}
+	content := fmt.Sprintf("JWT_SECRET=%s\nPASSWORD_PEPPER=%s\nDB_PATH=%s\nWORKERS=%d\nGITHUB_TOKEN=%s\nGITLAB_URL=%s\nGITLAB_TOKEN=%s\nGITEA_URL=%s\nGITEA_TOKEN=%s\nEXPORT_DESTINATION=%s\n",
+		jwt, pepper, dbPath, workerCount, github, gitlabURL, gitlabToken, giteaURL, giteaToken, exportDest)
 
-	err := godotenv.Write(env, path)
-	if err != nil {
-		log.Printf("[CONFIG] Warning: Could not save .env file: %v", err)
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		slog.Warn("Could not save .env file", "error", err)
 		return err
 	} else {
-		log.Printf("[CONFIG] Secrets generated and saved to %s", path)
+		slog.Info("Secrets generated and saved", "path", path)
 		return nil
 	}
 }

@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"os"
 	"sync"
@@ -33,13 +33,33 @@ func NewHealthService(db *database.DB, hub *websocket.Hub, syncManager *SyncMana
 }
 
 func (s *HealthService) Start() {
-	log.Println("[HEALTH] Starting background health monitoring")
+	slog.Info("Starting background health monitoring")
 	go func() {
 		for {
 			s.PerformCheck()
+			s.CleanupLogs()
 			time.Sleep(1 * time.Minute)
 		}
 	}()
+}
+
+func (s *HealthService) CleanupLogs() {
+	// Delete logs older than 7 days
+	_, err := s.db.Exec(`DELETE FROM system_logs WHERE created_at < datetime('now', '-7 days')`)
+	if err != nil {
+		slog.Error("Failed to cleanup old logs", "error", err)
+	}
+	
+	// Keep only the most recent 10,000 entries
+	_, err = s.db.Exec(`
+		DELETE FROM system_logs 
+		WHERE id NOT IN (
+			SELECT id FROM system_logs ORDER BY id DESC LIMIT 10000
+		)
+	`)
+	if err != nil {
+		slog.Error("Failed to trim log limits", "error", err)
+	}
 }
 
 func (s *HealthService) PerformCheck() {
@@ -101,7 +121,7 @@ func (s *HealthService) PerformCheck() {
 
 	// Handle status changes or periodic heartbeat
 	if newStatus != oldStatus {
-		log.Printf("[HEALTH] System status changed: %s -> %s", oldStatus, newStatus)
+		slog.Info("System status changed", "old", oldStatus, "new", newStatus)
 		
 		// Log incident if not healthy
 		if newStatus != "healthy" {

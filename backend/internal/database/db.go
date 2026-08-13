@@ -40,6 +40,13 @@ func createTables(db *sql.DB) error {
 			password_hash TEXT,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);`,
+		`CREATE TABLE IF NOT EXISTS system_logs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			level TEXT,
+			message TEXT,
+			attributes TEXT,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);`,
 		`CREATE TABLE IF NOT EXISTS incidents (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			repo_id INTEGER,
