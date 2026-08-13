@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"gitpatrol/internal/config"
 	"gitpatrol/internal/database"
 	"gitpatrol/internal/websocket"
 )
