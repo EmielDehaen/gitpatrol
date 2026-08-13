@@ -126,10 +126,14 @@ func saveEnv(path, jwt, pepper, dbPath, github, gitlabURL, gitlabToken, giteaURL
 		"WORKERS":            strconv.Itoa(workerCount),
 		"GITHUB_TOKEN":       github,
 		"GITLAB_URL":         gitlabURL,
-	content := fmt.Sprintf("JWT_SECRET=%s\nPASSWORD_PEPPER=%s\nDB_PATH=%s\nWORKERS=%d\nGITHUB_TOKEN=%s\nGITLAB_URL=%s\nGITLAB_TOKEN=%s\nGITEA_URL=%s\nGITEA_TOKEN=%s\nEXPORT_DESTINATION=%s\n",
-		jwt, pepper, dbPath, workerCount, github, gitlabURL, gitlabToken, giteaURL, giteaToken, exportDest)
+		"GITLAB_TOKEN":       gitlabToken,
+		"GITEA_URL":          giteaURL,
+		"GITEA_TOKEN":        giteaToken,
+		"EXPORT_DESTINATION": exportDest,
+	}
 
-	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+	err := godotenv.Write(env, path)
+	if err != nil {
 		slog.Warn("Could not save .env file", "error", err)
 		return err
 	} else {
