@@ -19,6 +19,8 @@
   let ws: WebSocket | null = null;
   let logsContainer: HTMLElement | null = $state(null);
   let autoScroll = $state(true);
+  let isPaused = $state(false);
+  let pausedBuffer: Syslog[] = [];
 
   // Filter states
   let filterLevel = $state('ALL');
@@ -64,22 +66,27 @@
         const data = JSON.parse(event.data);
         if (data.type === 'syslog') {
           const newLog = data.log;
-          // Normalize websocket log payload
-          logs = [...logs, {
+          const logEntry = {
             id: Date.now(), // dummy id for list
             level: newLog.level,
             message: newLog.message,
             attributes: newLog.attributes,
             created_at: newLog.time
-          }];
-          
-          // Keep max 1000 in memory
-          if (logs.length > 1000) {
-            logs = logs.slice(logs.length - 1000);
-          }
+          };
 
-          if (autoScroll) {
-            setTimeout(scrollToBottom, 10);
+          if (isPaused) {
+            pausedBuffer.push(logEntry);
+            if (pausedBuffer.length > 1000) {
+              pausedBuffer = pausedBuffer.slice(pausedBuffer.length - 1000);
+            }
+          } else {
+            logs = [...logs, logEntry];
+            if (logs.length > 1000) {
+              logs = logs.slice(logs.length - 1000);
+            }
+            if (autoScroll) {
+              setTimeout(scrollToBottom, 10);
+            }
           }
         }
       } catch (e) {
@@ -90,6 +97,20 @@
     ws.onclose = () => {
       setTimeout(connectWebSocket, 5000);
     };
+  }
+
+  function togglePause() {
+    isPaused = !isPaused;
+    if (!isPaused && pausedBuffer.length > 0) {
+      logs = [...logs, ...pausedBuffer];
+      if (logs.length > 1000) {
+        logs = logs.slice(logs.length - 1000);
+      }
+      pausedBuffer = [];
+      if (autoScroll) {
+        setTimeout(scrollToBottom, 10);
+      }
+    }
   }
 
   function scrollToBottom() {
@@ -171,6 +192,19 @@
       </div>
       <div class="terminal-title">gitpatrol-backend — slog</div>
       <div class="terminal-actions">
+        <button 
+          class="play-pause-btn" 
+          class:active={!isPaused}
+          class:paused={isPaused}
+          onclick={togglePause}
+          data-tooltip-bottom={isPaused ? "Resume Live Feed" : "Pause Live Feed"}
+        >
+          <Icon name={isPaused ? 'play' : 'pause'} size={14} />
+          {#if isPaused && pausedBuffer.length > 0}
+            <span class="buffer-badge">{pausedBuffer.length}</span>
+          {/if}
+        </button>
+        <div class="divider"></div>
         <button 
           class="scroll-lock" 
           class:active={autoScroll} 
@@ -388,6 +422,7 @@
       align-items: center;
       justify-content: center;
       transition: all 0.2s;
+      position: relative;
 
       &:hover {
         color: #CCC;
@@ -397,6 +432,29 @@
       &.active {
         color: var(--primary);
       }
+
+      &.paused {
+        color: #FFBD2E;
+      }
+    }
+    
+    .divider {
+      width: 1px;
+      height: 16px;
+      background: rgba(255,255,255,0.1);
+      margin: 0 4px;
+    }
+    
+    .buffer-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--primary);
+      color: var(--surface-container-lowest);
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 4px;
+      border-radius: 8px;
     }
   }
 
