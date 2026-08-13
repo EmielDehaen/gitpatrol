@@ -2,11 +2,12 @@
   import { type Repository } from '$lib/types';
   import { getAvatarUrl, getRemainingTime, getProgress, isSyncing, minutesToHuman, handleAvatarError } from '$lib/utils';
   import Icon from '$lib/components/Icon.svelte';
+  import { goto } from '$app/navigation';
 
-  let { repo, selectedRepo = $bindable() } = $props<{ repo: Repository, selectedRepo: Repository | null }>();
+  let { repo } = $props<{ repo: Repository }>();
 </script>
 
-<div class="card" onclick={() => selectedRepo = repo} onkeydown={() => {}} role='button' tabindex=-1>
+<div class="card" onclick={() => goto(`/repositories/${repo.id}`)} onkeydown={(e) => e.key === 'Enter' && goto(`/repositories/${repo.id}`)} role='button' tabindex=0>
   <div style="position: absolute; top: 32px; right: 32px; display: flex; align-items: center; gap: 16px;">
     <div 
       class="radial-timer" 
@@ -24,7 +25,7 @@
         />
       </svg>
     </div>
-    <div class="health-score" data-tooltip="Tactical Health Score" style="color: {repo.health_score > 70 ? 'var(--status-green)' : 'var(--status-yellow)'}; border-color: {repo.health_score > 70 ? 'var(--status-green)' : repo.health_score > 40 ? 'var(--status-yellow)' : 'var(--status-red)'}44">
+    <div class="health-score" data-tooltip="Tactical Health Score" style="color: {repo.health_score > 70 ? 'var(--primary)' : 'var(--warning, #ffcc00)'}; border-color: {repo.health_score > 70 ? 'var(--primary)' : repo.health_score > 40 ? 'var(--warning, #ffcc00)' : 'var(--error)'}44">
       {repo.health_score}
     </div>
   </div>
@@ -33,25 +34,25 @@
     <img 
       src={getAvatarUrl(repo.url)} 
       alt="" 
-      style="width: 44px; height: 44px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-border);"
+      style="width: 44px; height: 44px; border-radius: 12px; background: var(--surface-container-highest);"
       onerror={handleAvatarError}
     />
     <div>
       <h3 style="font-size: 1.5rem; margin: 0; letter-spacing: -0.02em;">{repo.name}</h3>
       <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
         {#if repo.status === 'syncing'}
-          <div class="badge" style="color: var(--status-green); background: rgba(0, 255, 136, 0.05); font-size: 0.6rem; padding: 2px 8px;">
-            <span class="pulse-dot" style="background: var(--status-green)"></span>
-            SYNCING ASSET
+          <div class="badge status-healthy" style="font-size: 0.6rem; padding: 2px 8px;">
+            <span class="dot"></span>
+            SYNCING
           </div>
         {:else if repo.status === 'error'}
-          <div class="badge" style="color: var(--status-red); background: rgba(255, 77, 77, 0.05); font-size: 0.6rem; padding: 2px 8px;">
-            <span style="width: 6px; height: 6px; background: var(--status-red); border-radius: 50%;"></span>
-            LINK FAILURE
+          <div class="badge status-critical" style="font-size: 0.6rem; padding: 2px 8px;">
+            <span class="dot"></span>
+            FAILED
           </div>
         {:else}
-          <div class="badge" style="color: var(--efinity-blue); background: rgba(0, 112, 243, 0.05); font-size: 0.6rem; padding: 2px 8px;">
-            <span style="width: 6px; height: 6px; background: var(--efinity-blue); border-radius: 50%;"></span>
+          <div class="badge status-healthy" style="font-size: 0.6rem; padding: 2px 8px; color: var(--primary); background: rgba(77, 221, 187, 0.1);">
+            <span class="dot"></span>
             SECURED
           </div>
         {/if}
@@ -63,7 +64,7 @@
   <div class="stats-row">
     <div class="stat-item" data-tooltip="GitHub Stars">
       <div style="display: flex; gap: .25rem; align-items: center;">
-        <Icon name="star" size={14} fill="var(--status-yellow)" stroke="none" style="opacity: 0.8;" /><b>{repo.stars}</b>
+        <Icon name="star" size={14} fill="#ffcc00" stroke="none" style="opacity: 0.8;" /><b>{repo.stars}</b>
       </div>
     </div>
     <div class="stat-item" data-tooltip="Open Issues">
@@ -75,7 +76,7 @@
 
   <div class="mini-chart">
     {#each JSON.parse(repo.commit_history || '[]') as count}
-      <div class="chart-bar" style="height: {count === 0 ? '4px' : Math.min(100, (count / 10) * 100)}%; background: {count === 0 ? 'rgba(255,255,255,0.05)' : `rgba(0, 112, 243, ${0.3 + (Math.min(count, 10) / 10) * 0.7})`}; box-shadow: {count > 5 ? `0 0 12px rgba(0, 112, 243, ${(Math.min(count, 10) / 10) * 0.4})` : 'none'};" data-tooltip="{count} commits"></div>
+      <div class="chart-bar" style="height: {count === 0 ? '4px' : Math.min(100, (count / 10) * 100)}%; background: {count === 0 ? 'var(--surface-container-highest)' : `rgba(77, 221, 187, ${0.3 + (Math.min(count, 10) / 10) * 0.7})`}; box-shadow: {count > 5 ? `0 0 12px rgba(77, 221, 187, ${(Math.min(count, 10) / 10) * 0.4})` : 'none'};" data-tooltip="{count} commits"></div>
     {/each}
   </div>
 
