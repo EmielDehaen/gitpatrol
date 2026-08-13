@@ -3,7 +3,6 @@ package config
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"log/slog"
 	"os"
 	"strconv"
